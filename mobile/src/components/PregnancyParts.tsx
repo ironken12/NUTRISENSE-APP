@@ -1,0 +1,163 @@
+import React, { useState } from 'react';
+import { Linking, Pressable, View } from 'react-native';
+
+import { useAuth } from '../lib/auth';
+import { formatDate } from '../lib/fun';
+import { NIFAS_LABEL, VISIT_STATUS } from '../lib/pregnancy';
+import type { AncVisit, NifasVisit, Pregnancy } from '../lib/types';
+import { colors, statusColor, tones } from '../theme';
+import { AudioButton } from './AudioButton';
+import { EscalationActions } from './SymptomTiles';
+import { Text } from './Text';
+import { Button, Card, Row, StatusPill } from './ui';
+import { Icon } from './Icon';
+
+/**
+ * Risiko sedang / tinggi: the level in large type, why in a few words, and one action: call the midwife
+ * (the Puskesmas number). Shown only when the level asks for contact.
+ * While a danger report is open (no staff member has recorded an outcome yet) the card is about that sign:
+ * go to the Puskesmas or call 119 now, with the same buttons as the danger screen. "See the midwife this week"
+ * would be wrong advice for bleeding or a fit.
+ */
+export function RiskCard({ p }: { p: Pregnancy }) {
+  const { t } = useAuth();
+  const r = p.risk;
+  const danger = p.status === 'active' ? p.open_danger : null;
+  if ((!r.contact && !danger) || p.status !== 'active') return null;
+  const key = danger ? 'urgent' : r.key;
+  const c = statusColor[key];
+  const tip = danger
+    ? danger.contacted_at
+      ? t('riskDangerContacted').replace('{name}', danger.contacted_by_name || t('dangerSomeone'))
+      : t('riskDangerTip')
+    : r.key === 'urgent'
+      ? t('riskHighTip')
+      : t('riskMidTip');
+  const phone = p.facility?.phone;
+  const kader = p.care_team.find((m) => m.role === 'kader');
+  const reasons = danger?.sign_labels.length ? danger.sign_labels : r.reasons;
+  return (
+    <Card tint={c.bg} style={key === 'urgent' ? { borderColor: colors.danger, borderWidth: 2 } : undefined}>
+      <Row style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 20, fontWeight: '900', color: c.fg }}>{danger ? `🚨 ${r.label}` : r.label}</Text>
+          <Text style={{ fontWeight: '700', color: c.fg }}>{reasons.join(' · ')}</Text>
+        </View>
+        <AudioButton text={`${r.label}. ${reasons.join(', ')}. ${tip}`} compact />
+      </Row>
+      <Text style={{ marginTop: 6, ...(danger ? { fontSize: 16, fontWeight: '800', color: c.fg } : {}) }}>{tip}</Text>
+      {danger ? (
+        <EscalationActions phone={kader?.phone} facility={p.facility} />
+      ) : (
+        <>
+          {phone ? (
+            <Button variant={r.key === 'urgent' ? 'danger' : 'primary'} title={t('callMidwife')} icon="call" onPress={() => Linking.openURL(`tel:${phone}`)} />
+          ) : null}
+          {p.facility ? (
+            <Text style={{ color: colors.muted, fontSize: 12.5, textAlign: 'center' }}>
+              {p.facility.name}
+              {phone ? ` · ${phone}` : ''}
+            </Text>
+          ) : null}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/** K1..K6 as six circles: tick when done, coloured ring when due or missed. */
+/** K1..K6 as six circles; a small 🏥 badge marks a visit whose results came from the Puskesmas. */
+export function AncDots({ anc, fromFacility = [] }: { anc: AncVisit[]; fromFacility?: number[] }) {
+  const { t } = useAuth();
+  const marked = anc.some((v) => v.status === 'done' && fromFacility.includes(v.number));
+  return (
+    <>
+      <Row style={{ justifyContent: 'space-between' }}>
+        {anc.map((v) => {
+          const c = statusColor[VISIT_STATUS[v.status].key];
+          const done = v.status === 'done';
+          const fac = done && fromFacility.includes(v.number);
+          return (
+            <View key={v.number} style={{ alignItems: 'center', gap: 4 }} accessible accessibilityLabel={`K${v.number} ${VISIT_STATUS[v.status].label.id}${fac ? ', dari Puskesmas' : ''}`}>
+              <View
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: done ? colors.mint : v.status === 'upcoming' ? colors.line : c.bg,
+                  borderWidth: done || v.status === 'upcoming' ? 0 : 2,
+                  borderColor: c.mark,
+                }}
+              >
+                {done ? <Icon name="checkmark" size={20} color="#fff" /> : <Text style={{ fontWeight: '800', fontSize: 13, color: v.status === 'upcoming' ? colors.muted : c.fg }}>K{v.number}</Text>}
+                {fac && (
+                  <View style={{ position: 'absolute', right: -5, bottom: -5, width: 20, height: 20, borderRadius: 10, backgroundColor: '#fff', borderWidth: 1.5, borderColor: colors.sky, alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="business" size={11} color={tones.blue.fg} />
+                  </View>
+                )}
+              </View>
+              <Text style={{ fontSize: 12, color: colors.muted }}>Tri {v.trimester}</Text>
+            </View>
+          );
+        })}
+      </Row>
+      {marked && (
+        <Row style={{ gap: 6, marginTop: 8 }}>
+          <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 1.5, borderColor: colors.sky, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon name="business" size={11} color={tones.blue.fg} />
+          </View>
+          <Text style={{ fontSize: 13, color: colors.muted }}>{t('flLegend')}</Text>
+        </Row>
+      )}
+    </>
+  );
+}
+
+/** Kunjungan nifas (KF for the mother, KN for the baby). With onToggle, a visit that is due can be marked
+ * done, and a done one undone (the server toggles), like the antenatal visits. */
+export function NifasList({ nifas, onToggle }: { nifas: NifasVisit[]; onToggle?: (code: string) => Promise<void> }) {
+  const { t, lang } = useAuth();
+  const [busy, setBusy] = useState<string | null>(null);
+  const toggle = async (code: string) => {
+    if (!onToggle) return;
+    setBusy(code);
+    try {
+      await onToggle(code);
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <View>
+      {nifas.map((v, i) => {
+        const st = VISIT_STATUS[v.status];
+        const done = v.status === 'done';
+        return (
+          <View key={v.code} style={{ paddingVertical: 9, borderTopWidth: i ? 1 : 0, borderColor: colors.line, gap: 6 }}>
+            <Row style={{ gap: 10 }}>
+              <Text style={{ fontSize: 20 }}>{v.who === 'mother' ? '🤱' : '👶'}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontWeight: '700' }}>{NIFAS_LABEL[v.code][lang]}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5 }}>
+                  {formatDate(v.window_start, lang)} – {formatDate(v.window_end, lang)}
+                </Text>
+              </View>
+              <StatusPill status={st.key} label={st.label[lang]} />
+            </Row>
+            {onToggle && !done && v.status !== 'upcoming' && (
+              <Button small title={t('markDone')} icon="checkmark" loading={busy === v.code} onPress={() => void toggle(v.code)} />
+            )}
+            {onToggle && done && (
+              <Pressable onPress={() => void toggle(v.code)} accessibilityRole="button" style={{ alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ color: colors.muted, fontSize: 13 }}>{t('undoLbl')}</Text>
+              </Pressable>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+

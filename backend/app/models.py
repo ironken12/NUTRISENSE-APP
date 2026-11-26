@@ -1,0 +1,548 @@
+"""ORM models. Mirrors the class diagram / ERD of the proposal (Figures 3.3.4 and 3.3.5)."""
+from datetime import date, datetime, timezone
+from enum import Enum
+
+from sqlalchemy import JSON, Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.types import TypeDecorator
+
+from .database import Base
+from .security import EncryptedText
+
+
+def utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class UTCDateTime(TypeDecorator):
+    """Timezone-aware UTC datetimes on every backend (SQLite drops tzinfo on its own)."""
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc) if value is not None else None
+
+    def process_result_value(self, value, dialect):
+        if value is not None and value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value
+
+
+class Role(str, Enum):
+    caregiver = "caregiver"
+    kader = "kader"
+    officer = "officer"
+    doctor = "doctor"
+    admin = "admin"
+
+
+class RiskLevel(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+
+
+class Region(Base):
+    __tablename__ = "regions"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(120))  # village / desa
+    district: Mapped[str] = mapped_column(String(120))  # kabupaten
+    province: Mapped[str] = mapped_column(String(120))
+    lat: Mapped[float] = mapped_column(Float)
+    lng: Mapped[float] = mapped_column(Float)
+    rural: Mapped[bool] = mapped_column(Boolean, default=True)
+    prevalence_benchmark: Mapped[float | None] = mapped_column(Float, nullable=True)  # % stunting, reference data
+    transport_difficulty: Mapped[int] = mapped_column(Integer, default=1)  # 1 (easy) .. 3 (island / no road)
+    # Nearest health facility and the monthly posyandu day, for the emergency card and the next-posyandu reminder.
+    puskesmas_name: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    puskesmas_phone: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    facility_km: Mapped[float | None] = mapped_column(Float, nullable=True)  # village to the Puskesmas
+    posyandu_day: Mapped[int | None] = mapped_column(Integer, nullable=True)  # day of the month
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)  # phone-only accounts have none
+    password_hash: Mapped[str] = mapped_column(String(255))
+    full_name: Mapped[str] = mapped_column(String(160))
+    phone: Mapped[str | None] = mapped_column(String(40), nullable=True, index=True)
+    role: Mapped[str] = mapped_column(String(20), default=Role.caregiver.value)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
+    language: Mapped[str] = mapped_column(String(5), default="id")
+    # Kaders often serve several villages; their home region plus these form their coverage area.
+    covered_region_ids: Mapped[list] = mapped_column(JSON, default=list)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    token_version: Mapped[int] = mapped_column(Integer, default=0)  # bumped on logout / password change to revoke tokens
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    region: Mapped[Region | None] = relationship()
+
+    def coverage(self) -> set[int]:
+        return ({self.region_id} if self.region_id else set()) | set(self.covered_region_ids or [])
+
+
+class Child(Base):
+    __tablename__ = "children"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(160))
+    sex: Mapped[str] = mapped_column(String(10))  # male | female
+    birth_date: Mapped[date] = mapped_column(Date)
+    caregiver_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kader_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True, index=True)
+    birth_weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    birth_length_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    clean_water_access: Mapped[bool] = mapped_column(Boolean, default=True)
+    sanitation_access: Mapped[bool] = mapped_column(Boolean, default=True)
+    exclusive_breastfeeding: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    birth_gestational_weeks: Mapped[float | None] = mapped_column(Float, nullable=True)  # < 37 = premature
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    caregiver: Mapped[User] = relationship(foreign_keys=[caregiver_id])
+    kader: Mapped[User | None] = relationship(foreign_keys=[kader_id])
+    region: Mapped[Region | None] = relationship()
+    measurements: Mapped[list["GrowthMeasurement"]] = relationship(
+        back_populates="child", order_by="GrowthMeasurement.measured_at", cascade="all, delete-orphan"
+    )
+
+
+class GrowthMeasurement(Base):
+    __tablename__ = "growth_measurements"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    measured_at: Mapped[date] = mapped_column(Date)
+    age_months: Mapped[float] = mapped_column(Float)
+    weight_kg: Mapped[float] = mapped_column(Float)
+    height_cm: Mapped[float] = mapped_column(Float)
+    muac_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    position: Mapped[str] = mapped_column(String(10), default="standing")  # lying | standing
+    haz: Mapped[float | None] = mapped_column(Float, nullable=True)
+    waz: Mapped[float | None] = mapped_column(Float, nullable=True)
+    whz: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source: Mapped[str] = mapped_column(String(20), default="app")  # app | kader | iot
+    measured_by: Mapped[str | None] = mapped_column(String(10), nullable=True)  # mother | kader: who held the scale / board
+    oedema: Mapped[bool | None] = mapped_column(Boolean, nullable=True)  # pitting oedema of both feet (gizi buruk sign)
+    client_uuid: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)  # offline sync idempotency
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    child: Mapped[Child] = relationship(back_populates="measurements")
+
+
+class SymptomReport(Base):
+    __tablename__ = "symptom_reports"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    reported_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    description: Mapped[str | None] = mapped_column(EncryptedText(), nullable=True)
+    symptoms: Mapped[list] = mapped_column(JSON, default=list)
+    danger_signs: Mapped[list] = mapped_column(JSON, default=list)
+    appetite: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    duration_days: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    interpreted_by: Mapped[str] = mapped_column(String(20), default="rules")
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    client_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)  # offline sync idempotency
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class MealLog(Base):
+    __tablename__ = "meal_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    logged_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    eaten_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    meal_type: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    items: Mapped[list] = mapped_column(JSON, default=list)
+    nutrients: Mapped[dict] = mapped_column(JSON, default=dict)
+    food_groups: Mapped[list] = mapped_column(JSON, default=list)
+    source: Mapped[str] = mapped_column(String(20), default="manual")
+    ai_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    client_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)  # offline sync idempotency
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class ModelRun(Base):
+    __tablename__ = "model_runs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(80))
+    algorithm: Mapped[str] = mapped_column(String(120))
+    version: Mapped[str] = mapped_column(String(40))
+    n_samples: Mapped[int] = mapped_column(Integer, default=0)
+    metrics: Mapped[dict] = mapped_column(JSON, default=dict)
+    feature_importances: Mapped[dict] = mapped_column(JSON, default=dict)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    trained_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class RiskAssessment(Base):
+    __tablename__ = "risk_assessments"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    measurement_id: Mapped[int | None] = mapped_column(ForeignKey("growth_measurements.id"), nullable=True)
+    symptom_report_id: Mapped[int | None] = mapped_column(ForeignKey("symptom_reports.id"), nullable=True)
+    model_run_id: Mapped[int | None] = mapped_column(ForeignKey("model_runs.id"), nullable=True)
+    risk_level: Mapped[str] = mapped_column(String(10))
+    probabilities: Mapped[dict] = mapped_column(JSON, default=dict)
+    confidence: Mapped[float] = mapped_column(Float)
+    needs_review: Mapped[bool] = mapped_column(Boolean, default=False)
+    guardrail: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    explanation: Mapped[list] = mapped_column(JSON, default=list)  # feature contributions
+    reasons: Mapped[list] = mapped_column(JSON, default=list)  # human-readable reasons
+    triage: Mapped[dict] = mapped_column(JSON, default=dict)
+    trend: Mapped[dict] = mapped_column(JSON, default=dict)
+    features: Mapped[dict] = mapped_column(JSON, default=dict)
+    reviewed_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    review_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_level: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    reviewed_by: Mapped[User | None] = relationship(foreign_keys=[reviewed_by_id])
+
+
+class NutritionRecommendation(Base):
+    __tablename__ = "nutrition_recommendations"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    assessment_id: Mapped[int | None] = mapped_column(ForeignKey("risk_assessments.id"), nullable=True)
+    content: Mapped[dict] = mapped_column(JSON, default=dict)
+    generated_by: Mapped[str] = mapped_column(String(20), default="rules")
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class Case(Base):
+    __tablename__ = "cases"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    assessment_id: Mapped[int | None] = mapped_column(ForeignKey("risk_assessments.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="open", index=True)  # open|in_progress|referred|resolved|closed
+    priority: Mapped[str] = mapped_column(String(20), default="medium")  # low|medium|high|emergency
+    urgency: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    assigned_to_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    doctor_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+    child: Mapped[Child] = relationship()
+    notes: Mapped[list["CaseNote"]] = relationship(order_by="CaseNote.created_at", cascade="all, delete-orphan")
+
+
+class CaseNote(Base):
+    __tablename__ = "case_notes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), index=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    text: Mapped[str] = mapped_column(EncryptedText())
+    # Staff can share a note with the family; it then appears as a health-worker recommendation in the app.
+    visible_to_caregiver: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    author: Mapped[User] = relationship()
+
+
+class Locker(Base):
+    """A N.E.X.U.S. smart locker (kind=locker) or a supply hub / Puskesmas warehouse that restocks lockers by road (kind=hub)."""
+
+    __tablename__ = "lockers"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(20), unique=True)
+    name: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(10), default="locker")
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
+    lat: Mapped[float] = mapped_column(Float)
+    lng: Mapped[float] = mapped_column(Float)
+    status: Mapped[str] = mapped_column(String(20), default="online")
+    slots_total: Mapped[int] = mapped_column(Integer, default=24)
+    last_heartbeat: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    region: Mapped[Region | None] = relationship()
+    inventory: Mapped[list["InventoryItem"]] = relationship(back_populates="locker", cascade="all, delete-orphan")
+
+
+class InventoryItem(Base):
+    __tablename__ = "inventory_items"
+    __table_args__ = (UniqueConstraint("locker_id", "item_key"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    locker_id: Mapped[int] = mapped_column(ForeignKey("lockers.id"), index=True)
+    item_key: Mapped[str] = mapped_column(String(40))
+    quantity: Mapped[int] = mapped_column(Integer, default=0)
+    reserved: Mapped[int] = mapped_column(Integer, default=0)
+    restock_threshold: Mapped[int] = mapped_column(Integer, default=5)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+    locker: Mapped[Locker] = relationship(back_populates="inventory")
+
+
+class SupplyRequest(Base):
+    __tablename__ = "supply_requests"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    case_id: Mapped[int | None] = mapped_column(ForeignKey("cases.id"), nullable=True)
+    requested_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    items: Mapped[list] = mapped_column(JSON, default=list)  # [{item_key, quantity}]
+    urgency: Mapped[str] = mapped_column(String(20), default="routine")
+    status: Mapped[str] = mapped_column(String(30), default="pending_approval")
+    fulfillment: Mapped[str | None] = mapped_column(String(20), nullable=True)  # locker_stock | courier
+    locker_id: Mapped[int | None] = mapped_column(ForeignKey("lockers.id"), nullable=True)
+    pickup_code: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
+    qr_payload: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    decision: Mapped[dict] = mapped_column(JSON, default=dict)  # logistics decision rationale
+    approved_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    approved_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    ready_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    picked_up_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    child: Mapped[Child] = relationship()
+    locker: Mapped[Locker | None] = relationship()
+
+
+class Consent(Base):
+    __tablename__ = "consents"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    scope: Mapped[str] = mapped_column(String(40))  # data_processing | ai_analysis | satusehat_sharing | research_use
+    granted: Mapped[bool] = mapped_column(Boolean, default=True)
+    version: Mapped[str] = mapped_column(String(10), default="1.0")
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    action: Mapped[str] = mapped_column(String(60))
+    entity: Mapped[str] = mapped_column(String(60))
+    entity_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    detail: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, index=True)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(30))
+    title: Mapped[str] = mapped_column(String(200))
+    body: Mapped[str] = mapped_column(Text)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)
+    read: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    role: Mapped[str] = mapped_column(String(10))  # user | assistant
+    content: Mapped[str] = mapped_column(EncryptedText())
+    generated_by: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class FhirSyncLog(Base):
+    __tablename__ = "fhir_sync_logs"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    triggered_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    status: Mapped[str] = mapped_column(String(20))  # simulated_success | blocked_no_consent
+    resource_count: Mapped[int] = mapped_column(Integer, default=0)
+    message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class DevelopmentCheck(Base):
+    """A caregiver's or Kader's answer to an age-appropriate developmental milestone (not a diagnostic screening)."""
+
+    __tablename__ = "development_checks"
+    __table_args__ = (UniqueConstraint("child_id", "milestone_key"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    milestone_key: Mapped[str] = mapped_column(String(40))
+    achieved: Mapped[bool] = mapped_column(Boolean, default=False)
+    recorded_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
+class Pregnancy(Base):
+    """A mother's pregnancy (ibu hamil), from HPHT to birth and the 42-day nifas period."""
+
+    __tablename__ = "pregnancies"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    mother_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kader_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True, index=True)
+    hpht: Mapped[date] = mapped_column(Date)  # first day of the last menstrual period
+    mother_height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    education: Mapped[str | None] = mapped_column(String(20), nullable=True)  # none | sd | smp | sma | higher
+    gravida: Mapped[int | None] = mapped_column(Integer, nullable=True)  # which pregnancy this is
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | delivered | ended
+    birth_plan: Mapped[dict] = mapped_column(JSON, default=dict)  # place, transport, companion, helper, blood donor, funding
+    birth_info: Mapped[dict] = mapped_column(JSON, default=dict)  # place, attendant, gestational weeks at birth
+    delivered_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True)
+    nifas_done: Mapped[list] = mapped_column(JSON, default=list)  # KF1..KF4 / KN1..KN3 codes
+    # Link to the health facility: with the mother's consent, the Puskesmas or hospital sends each check-up here.
+    # The mother shows the link code (or its QR) to the midwife; it identifies the pregnancy without her NIK.
+    facility_sync: Mapped[bool] = mapped_column(Boolean, default=False)
+    link_code: Mapped[str | None] = mapped_column(String(12), nullable=True)
+    linked_facility_id: Mapped[int | None] = mapped_column(ForeignKey("health_facilities.id"), nullable=True)
+    last_sync_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    mother: Mapped[User] = relationship(foreign_keys=[mother_id])
+    kader: Mapped[User | None] = relationship(foreign_keys=[kader_id])
+    region: Mapped[Region | None] = relationship()
+
+
+class HealthFacility(Base):
+    """A Puskesmas, hospital or midwife practice whose system sends antenatal check-ups to NutriSense (HL7 FHIR R4).
+
+    The facility's system authenticates with an API key; only its SHA-256 hash is stored."""
+
+    __tablename__ = "health_facilities"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20), default="puskesmas")  # puskesmas | rs | bidan
+    code: Mapped[str | None] = mapped_column(String(20), nullable=True)  # Kemenkes facility code, when known
+    region_id: Mapped[int | None] = mapped_column(ForeignKey("regions.id"), nullable=True)
+    api_key_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class FacilityLinkCode(Base):
+    """Every link code ever given out. A code is never given out twice, so a code a facility still holds after the mother
+    withdrew consent (or made a new code) can never send results to another mother."""
+
+    __tablename__ = "facility_link_codes"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(12), unique=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    issued_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    revoked_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+
+
+class AncExam(Base):
+    """One antenatal check-up as recorded at the health facility and received from its system."""
+
+    __tablename__ = "anc_exams"
+    __table_args__ = (UniqueConstraint("facility_id", "external_id"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    facility_id: Mapped[int] = mapped_column(ForeignKey("health_facilities.id"))
+    external_id: Mapped[str] = mapped_column(String(80))  # the facility's Encounter id: a resend updates, never duplicates
+    visit_number: Mapped[int | None] = mapped_column(Integer, nullable=True)  # K1..K6
+    exam_date: Mapped[date] = mapped_column(Date)
+    gestational_weeks: Mapped[float | None] = mapped_column(Float, nullable=True)
+    examiner: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bp_systolic: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    bp_diastolic: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    muac_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    hb_g_dl: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fundal_height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fetal_heart_rate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    fetal_presentation: Mapped[str | None] = mapped_column(String(20), nullable=True)  # head | breech | transverse
+    urine_protein: Mapped[str | None] = mapped_column(String(10), nullable=True)  # negative | +1 .. +4
+    td_immunization: Mapped[str | None] = mapped_column(String(10), nullable=True)  # TT1..TT5 / Td dose given
+    iron_tablets: Mapped[int | None] = mapped_column(Integer, nullable=True)  # TTD tablets handed out
+    notes: Mapped[str | None] = mapped_column(EncryptedText(), nullable=True)
+    received_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+    facility: Mapped[HealthFacility] = relationship()
+
+
+class MaternalMeasurement(Base):
+    """LiLA (mid-upper arm circumference) and Hb for a pregnant mother."""
+
+    __tablename__ = "maternal_measurements"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    measured_at: Mapped[date] = mapped_column(Date)
+    gestational_weeks: Mapped[float] = mapped_column(Float)
+    muac_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    hb_g_dl: Mapped[float | None] = mapped_column(Float, nullable=True)
+    weight_kg: Mapped[float | None] = mapped_column(Float, nullable=True)
+    client_uuid: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class AncVisit(Base):
+    """A completed antenatal care visit, K1..K6."""
+
+    __tablename__ = "anc_visits"
+    __table_args__ = (UniqueConstraint("pregnancy_id", "number"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    number: Mapped[int] = mapped_column(Integer)
+    visit_date: Mapped[date] = mapped_column(Date)
+    place: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+
+class PregnancyDailyLog(Base):
+    """One day's iron tablet (TTD) and supplementary food (PMT ibu hamil)."""
+
+    __tablename__ = "pregnancy_daily_logs"
+    __table_args__ = (UniqueConstraint("pregnancy_id", "day"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    day: Mapped[date] = mapped_column(Date)
+    ttd: Mapped[bool] = mapped_column(Boolean, default=False)
+    pmt: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class PregnancyDangerReport(Base):
+    __tablename__ = "pregnancy_danger_reports"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    pregnancy_id: Mapped[int] = mapped_column(ForeignKey("pregnancies.id"), index=True)
+    signs: Mapped[list] = mapped_column(JSON, default=list)
+    danger: Mapped[bool] = mapped_column(Boolean, default=False)
+    reported_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    client_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)  # offline replay key
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    # Staff follow-up: a danger report stays open (the mother stays urgent) until someone records what happened.
+    contacted_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    contacted_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    outcome: Mapped[str | None] = mapped_column(String(24), nullable=True)  # went_to_facility | advised_home | not_reached
+    outcome_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
+    outcome_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    contacted_by: Mapped[User | None] = relationship(foreign_keys=[contacted_by_id])
+
+
+class KiaRecord(Base):
+    """An immunisation visit, vitamin A capsule or deworming dose from the Buku KIA schedule, marked as given."""
+
+    __tablename__ = "kia_records"
+    __table_args__ = (UniqueConstraint("child_id", "item_key"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    item_key: Mapped[str] = mapped_column(String(20))  # imm_2, vita_12, worm_18 ...
+    given_at: Mapped[date] = mapped_column(Date)
+    recorded_by_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+
+class BreastfeedingLog(Base):
+    """One day of the ASI eksklusif tracker (0-5 months): ASI only, or what else the baby was given."""
+
+    __tablename__ = "breastfeeding_logs"
+    __table_args__ = (UniqueConstraint("child_id", "day"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    day: Mapped[date] = mapped_column(Date)
+    asi_only: Mapped[bool] = mapped_column(Boolean, default=True)
+    feeds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    other: Mapped[list] = mapped_column(JSON, default=list)  # water, formula, honey, rice water, food
+    client_uuid: Mapped[str | None] = mapped_column(String(64), nullable=True)
