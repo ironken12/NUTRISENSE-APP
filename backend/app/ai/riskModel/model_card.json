@@ -1,0 +1,44 @@
+{
+ "model": "Logistic regression (main model, Section 4.5.1)",
+ "data": "IFLS5 2014-15, 5,202 children aged 0-59 months, 13 provinces (no NTT)",
+ "excludes": "child height, weight and z-scores",
+ "evaluation": {
+  "Random 80/20 split": {
+   "n_test": 1043.0,
+   "accuracy": 0.435,
+   "f1_macro": 0.367,
+   "recall_high": 0.786,
+   "recall_high_ci_low": 0.724,
+   "recall_high_ci_high": 0.835,
+   "precision_high": 0.411,
+   "auc_high": 0.681,
+   "brier": 0.204,
+   "slope": 1.184
+  },
+  "NTB hold-out": {
+   "n_test": 479.0,
+   "accuracy": 0.51,
+   "f1_macro": 0.385,
+   "recall_high": 0.821,
+   "recall_high_ci_low": 0.757,
+   "recall_high_ci_high": 0.882,
+   "precision_high": 0.547,
+   "auc_high": 0.678,
+   "brier": 0.243,
+   "slope": 1.256
+  }
+ },
+ "top_inputs": [
+  "mother_height_cm",
+  "birth_weight_g",
+  "district",
+  "mother_education",
+  "immunisation_complete"
+ ],
+ "caveats": [
+  "Not a clinical validation",
+  "Recall target 0.80 not met on the lower bound of the 95% CI",
+  "Under-predicts risk where stunting is more common (NTB); recalibrate for NTT",
+  "Does not recognise the medium level well"
+ ]
+}
