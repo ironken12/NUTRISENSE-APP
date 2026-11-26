@@ -305,7 +305,7 @@ def seed_if_empty(db: Session) -> bool:
             db.add(PregnancyDailyLog(pregnancy_id=p.id, day=today - timedelta(days=i), ttd=i <= ttd_days, pmt=i <= pmt_days))
         return p
 
-    maria_p = pregnancy(maria, baumata, 24, 149.0, "sma", 3, [9, 18], [(9, 23.2, 11.2), (18, 22.8, 10.4)], 5, 3, {"place": "puskesmas"})
+    maria_p = pregnancy(maria, baumata, 24, 157.0, "sma", 3, [9, 18], [(9, 23.2, 11.2), (18, 22.8, 10.4)], 5, 3, {"place": "puskesmas"})
 
     # Health facilities whose systems send check-ups (FHIR). Demo keys only: see docs/FACILITY_INTEGRATION.md.
     facilities = {}
@@ -349,6 +349,38 @@ def seed_if_empty(db: Session) -> bool:
         born = today - timedelta(days=days_ago)
         p = pregnancy(cg, cg.region, 39 + days_ago // 7, 152.0, "sd", 3, anc_weeks[:n_visits], [], 0, 0)
         p.status, p.delivered_at, p.birth_info = "delivered", born, {"place": "puskesmas", "attendant": "bidan", "gestational_weeks": 39}
+
+    # The birth pregnancy of children whose mother has no other pregnancy record, so the risk model gets the mother's
+    # height, education, antenatal visits and Hb from the record instead of the IFLS averages. Sarah gets Grace's; the
+    # other cohort mothers get NTT-like values (short stature is common) from their own generator, so the rest stays the same.
+    def birth_record(c, mother, height, education, n_visits, hb):
+        hpht = c.birth_date - timedelta(days=280)
+        p = Pregnancy(mother_id=mother.id, region_id=c.region_id, kader_id=c.kader_id, hpht=hpht, mother_height_cm=height,
+                      education=education, gravida=2, status="delivered", delivered_at=c.birth_date, child_id=c.id,
+                      birth_info={"place": "puskesmas", "attendant": "bidan", "gestational_weeks": 40})
+        db.add(p)
+        db.flush()
+        for n, w in enumerate([10, 18, 23, 28, 33, 37, 39, 40][:n_visits], start=1):
+            db.add(AncVisit(pregnancy_id=p.id, number=n, visit_date=hpht + timedelta(weeks=w), place="Puskesmas"))
+        if hb is not None:
+            db.add(MaternalMeasurement(pregnancy_id=p.id, measured_at=hpht + timedelta(weeks=20), gestational_weeks=20, hb_g_dl=hb,
+                                       recorded_by_id=c.kader_id))
+
+    birth_record(c6, sarah, 158.0, "sma", 6, 12.4)
+    births = random.Random(23)
+    for c, cg in cohort[12:]:
+        birth_record(c, cg, round(min(168.0, max(140.0, births.gauss(152.0, 5.5))), 1),
+                     births.choice(["sd", "smp", "smp", "sma", "sma", "higher"]), births.randint(2, 8),
+                     round(births.gauss(11.6, 1.0), 1))
+
+    # Human review: Selfi's background is low risk for the model (tall mother, good birth weight, Kota Kupang), but her weight
+    # has dropped below -2 WHZ. The WHO guardrail raises her to medium against the model, so she waits for an officer's review.
+    martha = _user(db, "ibu.martha@nutrisense.id", "Ibu Martha Manafe", "caregiver", oesapa, "081300000005")
+    c8 = child("Selfi Manafe", "female", 20, martha, oesapa, birth_weight_kg=3.4, clean_water_access=True, sanitation_access=True)
+    birth_record(c8, martha, 160.0, "sma", 6, 12.3)
+    _trajectory(db, c8, kaders[oesapa.id], -0.3, -0.5, -0.6, -2.4, 4, random.Random(29))
+    _kia(db, c8, random.Random(31))
+    stories.append((c8, martha))
     db.commit()
 
     model_registry.get_active(db)

@@ -51,7 +51,7 @@ npx expo start
 |---|---|---|
 | Caregiver | `ibu.maria@nutrisense.id` | Budi (high risk, declining trend), Adel (low risk). Record a measurement, report symptoms, log a meal, show the locker QR in **Pickups**, chat with NutriBot |
 | Kader | `kader.oesapa@nutrisense.id` | Priority visit list, register a child for a caregiver, offline measurement capture, **Locker pickup** (scan QR / enter code) |
-| Health officer | `officer@nutrisense.id` | Dashboard (KPIs, village heat map, prevalence projection, model card), approve supply requests (locker stock or road delivery from a hub), fast-forward the delivery simulation, review AI results |
+| Health officer | `officer@nutrisense.id` | Dashboard (KPIs, village heat map, prevalence projection, model card), approve supply requests (locker stock or road delivery from a hub), fast-forward the delivery simulation, review AI results (Selfi Manafe waits for review: the model says low, her weight-for-height says medium) |
 | Doctor | `doctor@nutrisense.id` | Human-in-the-loop review, approve RUTF / deworming (doctor-only items), referrals |
 | Admin | `admin@nutrisense.id` | Everything above, plus user management and the audit log |
 

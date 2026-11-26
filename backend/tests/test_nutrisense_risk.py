@@ -195,7 +195,7 @@ def test_app_records_map_to_model_inputs(client):
         assert f["district"] == "5303" and f["urban"] == 0.0  # Baumata, Kabupaten Kupang
         assert f["birth_weight_g"] == 3100 and f["low_birth_weight"] == 0.0 and f["sex_male"] == 0.0
         # Mother Maria's current pregnancy is not Adel's: height and education may come from it, ANC visits and Hb may not.
-        assert f["mother_height_cm"] == 149.0 and f["mother_education"] == 3.0
+        assert f["mother_height_cm"] == 157.0 and f["mother_education"] == 3.0
         assert f["antenatal_contacts"] is None and f["mother_anaemia"] is None
         assert f["immunisation_complete"] == 1.0 and f["exclusive_bf_6m"] in (0.0, 1.0, None)
         assert abs(f["age_months"] - (adel.measurements[-1].measured_at - adel.birth_date).days / 30.4375) < 1e-9
@@ -222,3 +222,24 @@ def test_app_records_map_to_model_inputs(client):
         class R:
             district = "Kota Kupang"
         assert district_code(R()) == "5371" and district_code(None) is None
+
+
+def test_demo_data_shows_every_level_and_a_review(client):
+    """The demo data must not all score high: storyline children with recorded mothers score low, and Selfi (model low,
+    weight-for-height below -2) is raised by the WHO guardrail and waits for a human review."""
+    from sqlalchemy import select
+
+    from app.database import SessionLocal
+    from app.models import Child, RiskAssessment
+
+    with SessionLocal() as db:
+        first = {}
+        for a in db.scalars(select(RiskAssessment).order_by(RiskAssessment.id)).all():
+            first.setdefault(a.child_id, a)  # the seeded assessment, before other tests add or review any
+        by_name = {db.get(Child, cid).name: a for cid, a in first.items()}
+        for name in ("Adel Fanggidae", "Grace Pello", "Kristo Pello"):
+            assert by_name[name].features["model_level"] == "low", name
+        selfi = by_name["Selfi Manafe"]
+        assert selfi.features["model_level"] == "low" and selfi.risk_level == "medium"
+        assert selfi.guardrail == "wasted_minimum_medium" and selfi.needs_review
+        assert {a.risk_level for a in first.values()} == {"low", "medium", "high"}
