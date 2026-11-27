@@ -1,0 +1,678 @@
+{
+ "run_date": "2026-11-27",
+ "cases": [
+  {
+   "case": "Low risk (4.9.1)",
+   "child": "Wf Lowa",
+   "setup": [
+    "6 antenatal visits on a delivered pregnancy linked to the child (inserted in the database)"
+   ],
+   "measurement": {
+    "age_months": 18.0,
+    "height_cm": 79.3,
+    "weight_kg": 10.13,
+    "haz": -0.48,
+    "whz": 0.2,
+    "waz": -0.08
+   },
+   "weighings_2t": [
+    "N",
+    "N",
+    "N"
+   ],
+   "not_gaining": 0,
+   "model_level": "medium",
+   "final_level": "medium",
+   "p_stunting": 0.3121,
+   "guardrail": null,
+   "needs_review": true,
+   "missing_inputs": [
+    "mother_height_cm",
+    "mother_education",
+    "maternal_age",
+    "birth_order",
+    "father_height_cm",
+    "n_under5",
+    "wealth_index",
+    "exclusive_bf_6m",
+    "diarrhoea_1m",
+    "ari_1m",
+    "immunisation_complete",
+    "mother_anaemia"
+   ],
+   "triage": {
+    "urgency": "kader_7d",
+    "actions": [
+     "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.",
+     "Paket gizi akan disiapkan di loker N.E.X.U.S. terdekat. Anda akan menerima kode pengambilan.",
+     "Ikuti rencana gizi mingguan di aplikasi."
+    ]
+   },
+   "reasons": [
+    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Hasil ini perlu dicek petugas."
+   ],
+   "cases": [
+    {
+     "id": 44,
+     "status": "open",
+     "priority": "medium",
+     "urgency": "kader_7d",
+     "assigned_to_id": 4
+    }
+   ],
+   "supply_requests": [
+    {
+     "id": 43,
+     "status": "pending_approval",
+     "items": [
+      "pmt_biscuit",
+      "mnp_taburia",
+      "kelor_powder"
+     ],
+     "pickup_code": null,
+     "locker": null,
+     "route": null
+    }
+   ],
+   "notifications": {
+    "mother": [
+     "Hasil pemeriksaan Wf Lowa"
+    ],
+    "kader": [
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu",
+     "Perlu kunjungan: Petrus Lay",
+     "Perlu kunjungan: Lusia Bani",
+     "Risiko tinggi: Junita Tallo"
+    ],
+    "officer": [
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Elias Seran",
+     "Risiko tinggi: Beni Bani",
+     "Perlu kunjungan: Stefanus Ndun",
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu"
+    ]
+   },
+   "after_approval_mother_view": {
+    "pickup_code": "239421",
+    "has_qr": true,
+    "locker": "Loker Posyandu Oesapa",
+    "expires_at": "2026-11-30T08:36:57.188020+00:00"
+   },
+   "after_approval": {
+    "approve_http": 200,
+    "plan_options": [
+     null,
+     null,
+     null,
+     null
+    ],
+    "status": "ready_for_pickup",
+    "pickup_code": null,
+    "locker_id": null,
+    "fields": [
+     "approved_at",
+     "case_id",
+     "child_id",
+     "child_name",
+     "created_at",
+     "decision",
+     "expires_at",
+     "fulfillment",
+     "id",
+     "items",
+     "locker",
+     "picked_up_at",
+     "pickup_code",
+     "qr_payload",
+     "ready_at",
+     "status",
+     "urgency"
+    ],
+    "mother_notifications": [
+     "Paket gizi siap diambil",
+     "Hasil pemeriksaan Wf Lowa"
+    ]
+   }
+  },
+  {
+   "case": "Moderate risk (4.9.2)",
+   "child": "Wf Moda",
+   "setup": [
+    "symptom report: \"Anak diare sudah 3 hari minggu ini\" (HTTP 201)"
+   ],
+   "measurement": {
+    "age_months": 10.0,
+    "height_cm": 69.6,
+    "weight_kg": 8.0,
+    "haz": -1.61,
+    "whz": -0.5,
+    "waz": -1.24
+   },
+   "weighings_2t": [
+    "N",
+    "N",
+    "T"
+   ],
+   "not_gaining": 1,
+   "model_level": "medium",
+   "final_level": "medium",
+   "p_stunting": 0.3988,
+   "guardrail": null,
+   "needs_review": true,
+   "missing_inputs": [
+    "mother_height_cm",
+    "antenatal_contacts",
+    "mother_education",
+    "maternal_age",
+    "birth_order",
+    "father_height_cm",
+    "n_under5",
+    "wealth_index",
+    "exclusive_bf_6m",
+    "immunisation_complete",
+    "mother_anaemia"
+   ],
+   "triage": {
+    "urgency": "kader_7d",
+    "actions": [
+     "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.",
+     "Paket gizi akan disiapkan di loker N.E.X.U.S. terdekat. Anda akan menerima kode pengambilan.",
+     "Berikan oralit setiap kali BAB cair dan zinc 1x sehari selama 10 hari.",
+     "Ikuti rencana gizi mingguan di aplikasi."
+    ]
+   },
+   "reasons": [
+    "Tinggi badan di bawah rata-rata, mendekati batas stunting (TB/U -1,6)",
+    "Berat tidak naik di penimbangan terakhir (T)",
+    "Diare dalam 2 minggu terakhir",
+    "Berat lahir rendah (< 2,5 kg)",
+    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Hasil ini perlu dicek petugas."
+   ],
+   "cases": [
+    {
+     "id": 45,
+     "status": "open",
+     "priority": "medium",
+     "urgency": "kader_7d",
+     "assigned_to_id": 4
+    }
+   ],
+   "supply_requests": [
+    {
+     "id": 44,
+     "status": "pending_approval",
+     "items": [
+      "ors_zinc",
+      "pmt_biscuit",
+      "mnp_taburia",
+      "kelor_powder"
+     ],
+     "pickup_code": null,
+     "locker": null,
+     "route": null
+    }
+   ],
+   "notifications": {
+    "mother": [
+     "Hasil pemeriksaan Wf Moda"
+    ],
+    "kader": [
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu",
+     "Perlu kunjungan: Petrus Lay",
+     "Perlu kunjungan: Lusia Bani"
+    ],
+    "officer": [
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Elias Seran",
+     "Risiko tinggi: Beni Bani",
+     "Perlu kunjungan: Stefanus Ndun",
+     "Risiko tinggi: Natalia Seran"
+    ]
+   },
+   "after_approval_mother_view": {
+    "pickup_code": "354204",
+    "has_qr": true,
+    "locker": "Loker Posyandu Oesapa",
+    "expires_at": "2026-11-30T08:36:57.403796+00:00"
+   },
+   "after_approval": {
+    "approve_http": 200,
+    "plan_options": [
+     null,
+     null,
+     null,
+     null
+    ],
+    "status": "ready_for_pickup",
+    "pickup_code": null,
+    "locker_id": null,
+    "fields": [
+     "approved_at",
+     "case_id",
+     "child_id",
+     "child_name",
+     "created_at",
+     "decision",
+     "expires_at",
+     "fulfillment",
+     "id",
+     "items",
+     "locker",
+     "picked_up_at",
+     "pickup_code",
+     "qr_payload",
+     "ready_at",
+     "status",
+     "urgency"
+    ],
+    "mother_notifications": [
+     "Paket gizi siap diambil",
+     "Hasil pemeriksaan Wf Moda"
+    ]
+   }
+  },
+  {
+   "case": "High risk, child (4.9.3)",
+   "child": "Wf Higha",
+   "setup": [],
+   "measurement": {
+    "age_months": 26.0,
+    "height_cm": 79.5,
+    "weight_kg": 8.67,
+    "haz": -2.38,
+    "whz": -1.79,
+    "waz": -2.66
+   },
+   "weighings_2t": [
+    "N",
+    "T",
+    "T"
+   ],
+   "not_gaining": 2,
+   "model_level": "medium",
+   "final_level": "medium",
+   "p_stunting": 0.3224,
+   "guardrail": null,
+   "needs_review": true,
+   "missing_inputs": [
+    "birth_weight_g",
+    "mother_height_cm",
+    "antenatal_contacts",
+    "mother_education",
+    "maternal_age",
+    "birth_order",
+    "father_height_cm",
+    "n_under5",
+    "wealth_index",
+    "low_birth_weight",
+    "exclusive_bf_6m",
+    "diarrhoea_1m",
+    "ari_1m",
+    "immunisation_complete",
+    "mother_anaemia"
+   ],
+   "triage": {
+    "urgency": "kader_7d",
+    "actions": [
+     "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.",
+     "Paket gizi akan disiapkan di loker N.E.X.U.S. terdekat. Anda akan menerima kode pengambilan.",
+     "Ikuti rencana gizi mingguan di aplikasi."
+    ]
+   },
+   "reasons": [
+    "Tinggi badan menurut umur di bawah -2 SD / stunting (TB/U -2,4)",
+    "Berat badan menurut umur rendah (BB/U -2,7)",
+    "Berat tidak naik 2 kali berturut-turut (2T)",
+    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Hasil ini perlu dicek petugas."
+   ],
+   "cases": [
+    {
+     "id": 46,
+     "status": "open",
+     "priority": "medium",
+     "urgency": "kader_7d",
+     "assigned_to_id": 4
+    }
+   ],
+   "supply_requests": [
+    {
+     "id": 45,
+     "status": "pending_approval",
+     "items": [
+      "pmt_biscuit",
+      "kelor_powder"
+     ],
+     "pickup_code": null,
+     "locker": null,
+     "route": null
+    }
+   ],
+   "notifications": {
+    "mother": [
+     "Hasil pemeriksaan Wf Higha"
+    ],
+    "kader": [
+     "Perlu kunjungan: Wf Higha",
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu",
+     "Perlu kunjungan: Petrus Lay"
+    ],
+    "officer": [
+     "Perlu kunjungan: Wf Higha",
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Elias Seran",
+     "Risiko tinggi: Beni Bani",
+     "Perlu kunjungan: Stefanus Ndun"
+    ]
+   },
+   "after_approval_mother_view": {
+    "pickup_code": "494783",
+    "has_qr": true,
+    "locker": "Loker Posyandu Oesapa",
+    "expires_at": "2026-11-30T08:36:57.617678+00:00"
+   },
+   "after_approval": {
+    "approve_http": 200,
+    "plan_options": [
+     null,
+     null,
+     null,
+     null
+    ],
+    "status": "ready_for_pickup",
+    "pickup_code": null,
+    "locker_id": null,
+    "fields": [
+     "approved_at",
+     "case_id",
+     "child_id",
+     "child_name",
+     "created_at",
+     "decision",
+     "expires_at",
+     "fulfillment",
+     "id",
+     "items",
+     "locker",
+     "picked_up_at",
+     "pickup_code",
+     "qr_payload",
+     "ready_at",
+     "status",
+     "urgency"
+    ],
+    "mother_notifications": [
+     "Paket gizi siap diambil",
+     "Hasil pemeriksaan Wf Higha"
+    ]
+   }
+  },
+  {
+   "case": "High risk, pregnant woman (4.9.3)",
+   "setup": [
+    "second trimester (20 weeks), 2 ANC visits, MUAC 22.8 cm and Hb 10.4 g/dL entered by the mother"
+   ],
+   "gestational_weeks": 20,
+   "risk": {
+    "key": "urgent",
+    "label": "Risiko tinggi",
+    "reasons": [
+     "Lengan kecil (KEK)",
+     "Kurang darah (anemia)"
+    ],
+    "contact": true
+   },
+   "flags": [
+    {
+     "code": "kek",
+     "status": "action",
+     "value": 22.8
+    },
+    {
+     "code": "anemia",
+     "status": "action",
+     "value": 10.4
+    }
+   ],
+   "next_visit": null,
+   "measurement_result": {
+    "measurement": {
+     "id": 42,
+     "measured_at": "2026-11-27",
+     "gestational_weeks": 20.0,
+     "muac_cm": 22.8,
+     "hb_g_dl": 10.4,
+     "weight_kg": null
+    },
+    "flags": [
+     {
+      "code": "kek",
+      "status": "action",
+      "value": 22.8
+     },
+     {
+      "code": "anemia",
+      "status": "action",
+      "value": 10.4
+     }
+    ],
+    "created": true
+   },
+   "supply_requests": [],
+   "notifications": {
+    "mother": [],
+    "kader": [
+     "Ibu hamil perlu perhatian",
+     "Perlu kunjungan: Wf Higha",
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu"
+    ],
+    "officer": [
+     "Perlu kunjungan: Wf Higha",
+     "Perlu kunjungan: Wf Moda",
+     "Perlu kunjungan: Wf Lowa",
+     "Risiko tinggi: Elias Seran",
+     "Risiko tinggi: Beni Bani",
+     "Perlu kunjungan: Stefanus Ndun"
+    ]
+   },
+   "facility_or_midwife": {
+    "name": "Puskesmas Oesapa",
+    "phone": "0380-000-101",
+    "distance_km": 1.2,
+    "transport_difficulty": 1,
+    "ambulance": "119"
+   },
+   "pregnancy_detail_keys": [
+    "anc",
+    "anc_done",
+    "anc_missed",
+    "birth_info",
+    "birth_plan",
+    "care_team",
+    "child_id",
+    "daily_week",
+    "days_to_hpl",
+    "delivered_at",
+    "education",
+    "facility",
+    "facility_link",
+    "flags",
+    "gestational_days",
+    "gestational_extra_days",
+    "gestational_weeks",
+    "gravida",
+    "hpht",
+    "hpl",
+    "id",
+    "latest",
+    "latest_exam",
+    "measurements",
+    "mother_height_cm",
+    "mother_id",
+    "mother_name",
+    "next_anc",
+    "nifas",
+    "open_danger",
+    "pmt_needed",
+    "region",
+    "risk",
+    "status",
+    "today",
+    "today_log",
+    "trimester",
+    "ttd_total"
+   ],
+   "pregnancy_next": {
+    "birth_plan": {},
+    "risk": {
+     "key": "urgent",
+     "label": "Risiko tinggi",
+     "reasons": [
+      "Lengan kecil (KEK)",
+      "Kurang darah (anemia)"
+     ],
+     "contact": true
+    },
+    "anc": [
+     {
+      "number": 1,
+      "trimester": 1,
+      "from_week": 0,
+      "to_week": 12,
+      "target_week": 10,
+      "doctor": true,
+      "window_start": "2026-07-10",
+      "window_end": "2026-10-08",
+      "target_date": "2026-09-18",
+      "status": "done",
+      "visit_date": "2026-09-11",
+      "place": null
+     },
+     {
+      "number": 2,
+      "trimester": 2,
+      "from_week": 13,
+      "to_week": 24,
+      "target_week": 18,
+      "doctor": false,
+      "window_start": "2026-10-09",
+      "window_end": "2026-12-31",
+      "target_date": "2026-11-13",
+      "status": "done",
+      "visit_date": "2026-10-30",
+      "place": null
+     },
+     {
+      "number": 3,
+      "trimester": 2,
+      "from_week": 13,
+      "to_week": 24,
+      "target_week": 23,
+      "doctor": false,
+      "window_start": "2026-10-09",
+      "window_end": "2026-12-31",
+      "target_date": "2026-12-18",
+      "status": "due",
+      "visit_date": null,
+      "place": null
+     },
+     {
+      "number": 4,
+      "trimester": 3,
+      "from_week": 25,
+      "to_week": 42,
+      "target_week": 30,
+      "doctor": false,
+      "window_start": "2027-01-01",
+      "window_end": "2027-05-06",
+      "target_date": "2027-02-05",
+      "status": "upcoming",
+      "visit_date": null,
+      "place": null
+     },
+     {
+      "number": 5,
+      "trimester": 3,
+      "from_week": 25,
+      "to_week": 42,
+      "target_week": 34,
+      "doctor": true,
+      "window_start": "2027-01-01",
+      "window_end": "2027-05-06",
+      "target_date": "2027-03-05",
+      "status": "upcoming",
+      "visit_date": null,
+      "place": null
+     },
+     {
+      "number": 6,
+      "trimester": 3,
+      "from_week": 25,
+      "to_week": 42,
+      "target_week": 38,
+      "doctor": false,
+      "window_start": "2027-01-01",
+      "window_end": "2027-05-06",
+      "target_date": "2027-04-02",
+      "status": "upcoming",
+      "visit_date": null,
+      "place": null
+     }
+    ],
+    "next_anc": {
+     "number": 3,
+     "trimester": 2,
+     "from_week": 13,
+     "to_week": 24,
+     "target_week": 23,
+     "doctor": false,
+     "window_start": "2026-10-09",
+     "window_end": "2026-12-31",
+     "target_date": "2026-12-18",
+     "status": "due",
+     "visit_date": null,
+     "place": null
+    },
+    "anc_missed": 0,
+    "anc_done": 2,
+    "today_log": {
+     "ttd": false,
+     "pmt": false
+    },
+    "today": [
+     {
+      "key": "ttd",
+      "status": "action",
+      "action": "supplements",
+      "text": "Minum tablet tambah darah hari ini"
+     },
+     {
+      "key": "pmt",
+      "status": "action",
+      "action": "supplements",
+      "text": "Makan makanan tambahan ibu hamil"
+     },
+     {
+      "key": "anc",
+      "status": "action",
+      "action": "anc",
+      "text": "Periksa hamil ke-3: sekarang"
+     }
+    ]
+   }
+  }
+ ]
+}
