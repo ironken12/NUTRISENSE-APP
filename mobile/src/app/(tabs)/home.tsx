@@ -10,7 +10,7 @@ import { SyncBanner } from '../../components/SyncBanner';
 import { Text } from '../../components/Text';
 import { Button, Card, Empty, ErrorBox, IconChip, ListRow, Loading, PressScale, QuickAction, Row, Section, StatusPill, Tile, Wash } from '../../components/ui';
 import { useAuth } from '../../lib/auth';
-import { childEmoji, formatAge, formatDate, greeting } from '../../lib/fun';
+import { childEmoji, fmtNum, formatAge, formatDate, greeting } from '../../lib/fun';
 import { motherStatus, txt } from '../../lib/status';
 import type { Child, Facility, Posyandu, Pregnancy, TodayChecklist } from '../../lib/types';
 import { useApi } from '../../lib/useApi';
@@ -241,9 +241,9 @@ function MotherHome() {
               </Row>
               {m ? (
                 <Text style={{ fontSize: 22, fontWeight: '900', marginTop: 12 }}>
-                  {m.height_cm} <Text style={{ fontSize: 14, color: colors.muted, fontWeight: '500' }}>cm</Text>
+                  {fmtNum(m.height_cm, lang)} <Text style={{ fontSize: 14, color: colors.muted, fontWeight: '500' }}>cm</Text>
                   <Text style={{ color: '#C9C4DD' }}> · </Text>
-                  {m.weight_kg} <Text style={{ fontSize: 14, color: colors.muted, fontWeight: '500' }}>kg</Text>
+                  {fmtNum(m.weight_kg, lang, 2)} <Text style={{ fontSize: 14, color: colors.muted, fontWeight: '500' }}>kg</Text>
                 </Text>
               ) : null}
             </Card>

@@ -437,9 +437,18 @@ export function Chip({ label, selected, onPress, tone, emoji }: { label: string;
   );
 }
 
+/** "🌅 Pagi" -> ["🌅", "Pagi"]; a label without a leading emoji stays whole. */
+function splitEmoji(label: string): string[] {
+  const m = label.match(/^(\p{Extended_Pictographic}\S*)\s+(.+)$/u);
+  return m ? [m[1], m[2]] : [label];
+}
+
 export function Segmented<T extends string>({ options, value, onChange }: { options: { value: T; label: string }[]; value: T; onChange: (v: T) => void }) {
   // With large text, four options no longer fit on one line: wrap into two rows instead of squeezing the labels.
   const wrap = useContext(TextScaleContext) > 1.1 && options.length > 3;
+  // Four or more options at normal size: the emoji goes above the word in every option, so they all look the same
+  // (otherwise the longer words wrap and the shorter ones do not).
+  const stack = !wrap && options.length > 3 && options.every((o) => splitEmoji(o.label).length === 2);
   return (
     <View style={[styles.segment, wrap && { flexWrap: 'wrap', borderRadius: radius.lg }]}>
       {options.map((o) => (
@@ -450,7 +459,9 @@ export function Segmented<T extends string>({ options, value, onChange }: { opti
           aria-selected={value === o.value}
           style={[styles.segmentItem, wrap && { flexBasis: '48%' }, value === o.value && styles.segmentActive]}
         >
-          <Text style={{ color: value === o.value ? colors.primaryDark : colors.muted, fontWeight: value === o.value ? '800' : '600', textAlign: 'center' }}>{o.label}</Text>
+          <Text style={{ color: value === o.value ? colors.primaryDark : colors.muted, fontWeight: value === o.value ? '800' : '600', textAlign: 'center' }}>
+            {stack ? splitEmoji(o.label).join('\n') : o.label}
+          </Text>
         </Pressable>
       ))}
     </View>

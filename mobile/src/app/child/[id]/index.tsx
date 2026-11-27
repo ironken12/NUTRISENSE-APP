@@ -28,7 +28,7 @@ import {
 } from '../../../components/ui';
 import { api, ApiError, errorText } from '../../../lib/api';
 import { isStaff, useAuth } from '../../../lib/auth';
-import { childEmoji, formatAge, formatDate, stickers } from '../../../lib/fun';
+import { childEmoji, fmtNum, formatAge, formatDate, stickers } from '../../../lib/fun';
 import { clinicalStatus, motherStatus, txt, zWords } from '../../../lib/status';
 import { VISIT_STATUS } from '../../../lib/pregnancy';
 import type { Child, Development, KiaSchedule, Meal, Measurement } from '../../../lib/types';
@@ -83,7 +83,7 @@ function MetricTile({ label, full, z, kind, plain, value }: { label: string; ful
 }
 
 function GrowthTrend({ childId, name }: { childId: string; name: string }) {
-  const { t } = useAuth();
+  const { t, lang } = useAuth();
   const [ind, setInd] = useState<Indicator>('hfa');
   const [more, setMore] = useState(false);
   const chart = useApi<ChartData>(`/api/children/${childId}/growth-chart?indicator=${ind}`);
@@ -120,7 +120,7 @@ function GrowthTrend({ childId, name }: { childId: string; name: string }) {
           {d?.meaning ? <Text style={{ fontSize: 14, lineHeight: 20 }}>{d.meaning}</Text> : null}
           {d?.details && (
             <Text style={{ color: colors.muted, fontSize: 13 }}>
-              {d.details.label}: {fmtZ(d.details.z)} SD · {d.details.reference}
+              {d.details.label}: {fmtZ(d.details.z, lang)} SD · {d.details.reference}
             </Text>
           )}
           <Text style={{ color: colors.muted, fontSize: 13 }}>{t('zExplain')}</Text>
@@ -260,7 +260,7 @@ export default function ChildDetail() {
 
   return (
     <Screen refreshing={child.loading} onRefresh={reload}>
-      <Stack.Screen options={{ title: c.name }} />
+      <Stack.Screen options={{ title: t('childProfile') }} />
       <SyncBanner stale={child.stale || measurements.stale || meals.stale} />
 
       {/* Who and how they are */}
@@ -287,8 +287,8 @@ export default function ChildDetail() {
       {/* The three growth numbers */}
       {m ? (
         <View style={{ flexDirection: mom ? 'column' : 'row', gap: 8, alignItems: 'stretch' }}>
-          <MetricTile label={t('height_short')} full={t('fHeightAge')} z={m.haz} kind="height" plain={mom} value={`${m.height_cm} cm`} />
-          <MetricTile label={t('weight_short')} full={t('fWeightAge')} z={m.waz} kind="weight" plain={mom} value={`${m.weight_kg} kg`} />
+          <MetricTile label={t('height_short')} full={t('fHeightAge')} z={m.haz} kind="height" plain={mom} value={`${fmtNum(m.height_cm, lang)} cm`} />
+          <MetricTile label={t('weight_short')} full={t('fWeightAge')} z={m.waz} kind="weight" plain={mom} value={`${fmtNum(m.weight_kg, lang, 2)} kg`} />
           <MetricTile label={mom ? t('balancePlain') : t('bbtb_short')} full={t('fWeightHeight')} z={m.whz} kind="balance" plain={mom} />
         </View>
       ) : (
@@ -302,6 +302,20 @@ export default function ChildDetail() {
 
       {/* Nuri's short guidance and what to do */}
       {a && <AssessmentView a={a} facility={c.facility} kaderPhone={kader?.phone} hideEmergency={emergency} />}
+
+      {/* The family questions of the risk model, while any is unanswered */}
+      {(c.father_height_cm == null || c.mother_age_at_birth == null || c.household_under5 == null || c.household_assets == null) && (
+        <Card onPress={() => router.push(`/child/${id}/family`)}>
+          <Row style={{ gap: 12 }}>
+            <IconChip emoji="👪" size={44} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700' }}>{t('familyTitle')}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13 }}>{t('familyPrompt')}</Text>
+            </View>
+            <Icon name="chevron-forward" size={18} color={colors.muted} />
+          </Row>
+        </Card>
+      )}
 
       <KiaSummary childId={id} />
       {c.posyandu && (

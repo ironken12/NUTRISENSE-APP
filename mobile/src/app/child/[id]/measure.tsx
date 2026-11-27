@@ -12,7 +12,7 @@ import { Bubble, Button, Card, Chip, ErrorBox, Field, IconChip, PressScale, Row,
 import { api, errorText, NetworkError } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
 import { localDate } from '../../../lib/dates';
-import { formatAge, formatDate } from '../../../lib/fun';
+import { fmtNum, formatAge, formatDate } from '../../../lib/fun';
 import { enqueue, uuid } from '../../../lib/offline';
 import { useSync } from '../../../lib/sync';
 import type { Assessment, Child, Measurement } from '../../../lib/types';
@@ -107,8 +107,8 @@ export default function Measure() {
   const num = (s: string) => Number(s.replace(',', '.'));
   const last = c?.latest_measurement;
   const warnings: string[] = [];
-  if (last && height && num(height) < last.height_cm - 1.5) warnings.push(`${t('warnShorter')} (${last.height_cm} cm)`);
-  if (last && weight && Math.abs(num(weight) - last.weight_kg) > 3) warnings.push(`${t('warnWeightJump')} (${last.weight_kg} kg)`);
+  if (last && height && num(height) < last.height_cm - 1.5) warnings.push(`${t('warnShorter')} (${fmtNum(last.height_cm, lang)} cm)`);
+  if (last && weight && Math.abs(num(weight) - last.weight_kg) > 3) warnings.push(`${t('warnWeightJump')} (${fmtNum(last.weight_kg, lang, 2)} kg)`);
   const bad = measurementProblems(num(weight), num(height));
   const blocked = bad.weight || bad.height;
   const swap = () => {
@@ -165,7 +165,7 @@ export default function Measure() {
         <Card tint={tones.green.bg}>
           <Text style={{ fontWeight: '900', color: colors.ok }}>✓ {t('measurementSaved')}</Text>
           <Text style={{ fontSize: 22, fontWeight: '900' }}>
-            📏 {m.height_cm} cm · ⚖️ {m.weight_kg} kg
+            📏 {fmtNum(m.height_cm, lang)} cm · ⚖️ {fmtNum(m.weight_kg, lang, 2)} kg
           </Text>
           <Text style={{ color: colors.muted }}>{formatDate(m.measured_at, lang)}</Text>
         </Card>

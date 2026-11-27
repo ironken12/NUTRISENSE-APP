@@ -6,7 +6,7 @@ import { ChartData, GrowthChart } from '../../../components/GrowthChart';
 import { Text } from '../../../components/Text';
 import { Button, Card, Empty, ErrorBox, Loading, MoreLink, Row, Screen, Segmented, StatusPill } from '../../../components/ui';
 import { useAuth } from '../../../lib/auth';
-import { formatDate } from '../../../lib/fun';
+import { fmtNum, fmtSigned, formatDate } from '../../../lib/fun';
 import { zWords } from '../../../lib/status';
 import type { Child, Measurement } from '../../../lib/types';
 import { useApi } from '../../../lib/useApi';
@@ -37,7 +37,7 @@ export default function History() {
   const prev = rows[1];
   const dH = prev ? latest.height_cm - prev.height_cm : null;
   const dW = prev ? latest.weight_kg - prev.weight_kg : null;
-  const sign = (v: number) => (v >= 0 ? `+${v.toFixed(1)}` : v.toFixed(1));
+  const sign = (v: number) => fmtSigned(v, lang);
   // Weight that did not go up is a warning (as the 2T rule says), never shown in reassuring green.
   const notGaining = dW !== null && dW < 0.05;
 
@@ -49,9 +49,9 @@ export default function History() {
           {t('growthOf')} {name}
         </Text>
         <Text style={{ fontSize: 26, fontWeight: '900' }}>
-          {latest.height_cm} <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '500' }}>cm</Text>
+          {fmtNum(latest.height_cm, lang)} <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '500' }}>cm</Text>
           <Text style={{ color: '#C9C4DD' }}> · </Text>
-          {latest.weight_kg} <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '500' }}>kg</Text>
+          {fmtNum(latest.weight_kg, lang, 2)} <Text style={{ fontSize: 15, color: colors.muted, fontWeight: '500' }}>kg</Text>
         </Text>
         {dH !== null && dW !== null && (
           <Text style={{ fontSize: 14, color: notGaining ? statusColor.action.fg : colors.ok, fontWeight: '700' }}>
@@ -99,7 +99,7 @@ export default function History() {
               <StatusPill status={zWords(x.haz, lang, 'height').key} label={zWords(x.haz, lang, 'height').text} />
             </View>
             <Text style={{ fontSize: 14, fontWeight: '600' }}>
-              {x.height_cm} cm · {x.weight_kg} kg
+              {fmtNum(x.height_cm, lang)} cm · {fmtNum(x.weight_kg, lang, 2)} kg
             </Text>
           </Row>
         ))}

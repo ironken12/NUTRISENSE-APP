@@ -5,6 +5,8 @@ measurement / symptoms -> z-scores -> growth trend -> features -> classify() -> 
 """
 from __future__ import annotations
 
+import re
+
 from datetime import date, datetime, timedelta, timezone
 
 import numpy as np
@@ -254,7 +256,12 @@ _R = {
 
 def _reason(key: str, lang: str, v=None) -> dict:
     text = _R[key][0 if lang == "id" else 1]
-    return {"code": key, "text": text.format(v=v) if v is not None else text}
+    if v is None:
+        return {"code": key, "text": text}
+    text = text.format(v=v)
+    if lang == "id" and isinstance(v, (int, float)):
+        text = re.sub(r"(?<=\d)\.(?=\d)", ",", text)  # Indonesian decimal comma: "TB/U -1,9", "1,5 dari 8"
+    return {"code": key, "text": text}
 
 
 # Plain names of the WHO/Kemenkes override rules (risk_model.who_overrides) and of inputs that can be missing.

@@ -1,6 +1,22 @@
 /** Friendly, playful helpers for the mother-facing experience (emoji, stickers, streaks, tips). */
 import type { Lang, Meal, Measurement } from './types';
 
+/** A number as people write it: Indonesian "11,18" and "1.350", English "11.18" and "1,350".
+ *  `digits` is the most decimals shown; trailing zeros are dropped unless `fixed`. */
+export function fmtNum(v: number | null | undefined, lang: Lang, digits = 1, fixed = false): string {
+  if (v === null || v === undefined || !Number.isFinite(v)) return '–';
+  let s = Math.abs(v).toFixed(digits);
+  if (!fixed && s.includes('.')) s = s.replace(/\.?0+$/, '');
+  const [int, dec] = s.split('.');
+  const grouped = int.replace(/\B(?=(\d{3})+(?!\d))/g, lang === 'id' ? '.' : ',');
+  return `${v < 0 ? '−' : ''}${grouped}${dec ? (lang === 'id' ? ',' : '.') + dec : ''}`;
+}
+
+/** A signed change: "+0,4", "−1,2", "+0" (Indonesian) or "+0.4" (English). */
+export function fmtSigned(v: number, lang: Lang, digits = 1): string {
+  return `${v >= 0 ? '+' : ''}${fmtNum(v, lang, digits)}`;
+}
+
 export const FOOD_EMOJI: Record<string, string> = {
   nasi: '🍚', bubur_beras: '🥣', jagung: '🌽', singkong: '🥔', roti: '🍞', mie: '🍜', pmt_biskuit: '🍪',
   ubi_jalar: '🍠', telur: '🥚', ikan: '🐟', ikan_teri: '🐟', ayam: '🍗', hati_ayam: '🍖', daging_sapi: '🥩',

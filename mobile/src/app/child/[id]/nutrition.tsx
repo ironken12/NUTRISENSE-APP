@@ -6,8 +6,8 @@ import { RecipeCard } from '../../../components/Recipes';
 import { Text } from '../../../components/Text';
 import { Badge, Bar, Bubble, Button, Card, ErrorBox, H2, Loading, Row, Screen } from '../../../components/ui';
 import { api, errorText } from '../../../lib/api';
-import { useAuth } from '../../../lib/auth';
-import { FOOD_EMOJI, formatDate, NUTRIENT_EMOJI } from '../../../lib/fun';
+import { isStaff, useAuth } from '../../../lib/auth';
+import { fmtNum, FOOD_EMOJI, formatDate, NUTRIENT_EMOJI } from '../../../lib/fun';
 import { NUTRIENT_LABELS } from '../../../lib/i18n';
 import type { NutritionPlan } from '../../../lib/types';
 import { useApi } from '../../../lib/useApi';
@@ -17,7 +17,8 @@ const MEAL_EMOJI = ['🌅', '🍎', '☀️', '🍌', '🌙'];
 
 export default function Nutrition() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { t, lang } = useAuth();
+  const { t, lang, user } = useAuth();
+  const staff = isStaff(user);
   const plan = useApi<NutritionPlan>(`/api/children/${id}/nutrition-plan`);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +44,7 @@ export default function Nutrition() {
       <Card tint={colors.mintSoft}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Text style={{ fontSize: 20, fontWeight: '900', color: colors.ok, flex: 1 }}>🥗 {p.headline}</Text>
-          <Badge text={t(p.generated_by.startsWith('claude') ? 'aiBy_claude' : 'aiBy_rules')} fg={colors.info} bg="#fff" />
+          {staff && <Badge text={t(p.generated_by.startsWith('claude') ? 'aiBy_claude' : 'aiBy_rules')} fg={colors.info} bg="#fff" />}
         </Row>
         <Text style={{ color: colors.muted }}>{formatDate(p.created_at, lang)}</Text>
       </Card>
@@ -61,9 +62,15 @@ export default function Nutrition() {
                 <Text style={{ color: (pct[k] ?? 0) < 70 ? colors.warn : colors.ok, fontWeight: '800' }}>{pct[k] ?? 0}%</Text>
               </Row>
               <Bar pct={pct[k] ?? 0} />
-              <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
-                {p.intake.average?.[k] ?? 0} / {target} {NUTRIENT_LABELS[k]?.unit}
-              </Text>
+              {staff ? (
+                <Text style={{ fontSize: 12, color: colors.muted, marginTop: 2 }}>
+                  {fmtNum(p.intake.average?.[k] ?? 0, lang)} / {fmtNum(target, lang)} {NUTRIENT_LABELS[k]?.unit}
+                </Text>
+              ) : (
+                <Text style={{ fontSize: 13, color: (pct[k] ?? 0) < 70 ? colors.warn : colors.ok, marginTop: 2, fontWeight: '600' }}>
+                  {t((pct[k] ?? 0) >= 100 ? 'needMet' : (pct[k] ?? 0) >= 70 ? 'needAlmost' : 'needLow')}
+                </Text>
+              )}
             </View>
           ))
         ) : (
@@ -71,7 +78,7 @@ export default function Nutrition() {
         )}
         {p.intake.dietary_diversity !== null && (
           <Text style={{ marginTop: 4 }}>
-            🌈 {t('diversity')}: <Text style={{ fontWeight: '900', color: p.intake.mdd_met ? colors.ok : colors.warn }}>{p.intake.dietary_diversity}</Text> / 8 {t('groupsPerDay')}
+            🌈 {t('diversity')}: <Text style={{ fontWeight: '900', color: p.intake.mdd_met ? colors.ok : colors.warn }}>{fmtNum(p.intake.dietary_diversity, lang)}</Text> / 8 {t('groupsPerDay')}
           </Text>
         )}
         <Button small variant="secondary" title={t('logMeal')} icon="create-outline" onPress={() => router.push(`/child/${id}/meal?action=manual`)} />

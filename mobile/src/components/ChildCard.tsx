@@ -3,7 +3,7 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { useAuth } from '../lib/auth';
-import { childEmoji, formatAge } from '../lib/fun';
+import { childEmoji, fmtNum, formatAge } from '../lib/fun';
 import type { Child } from '../lib/types';
 import { colors } from '../theme';
 import { Text } from './Text';
@@ -37,7 +37,7 @@ export function ChildCard({ child }: { child: Child }) {
           <Text style={{ fontSize: 18, fontWeight: '900' }}>{child.name}</Text>
           <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 4 }}>
             🎂 {formatAge(child.age_months, lang)}
-            {m ? `  ·  📏 ${m.height_cm} cm  ·  ⚖️ ${m.weight_kg} kg` : ''}
+            {m ? `  ·  📏 ${fmtNum(m.height_cm, lang)} cm  ·  ⚖️ ${fmtNum(m.weight_kg, lang, 2)} kg` : ''}
           </Text>
           <RiskBadge level={a?.risk_level} />
         </View>

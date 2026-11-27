@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { Linking, View } from 'react-native';
 
 import { useAuth } from '../lib/auth';
-import { formatDate } from '../lib/fun';
+import { fmtNum, formatDate } from '../lib/fun';
 import { featureLabel } from '../lib/i18n';
 import { motherStatus, txt, zWords } from '../lib/status';
-import type { Assessment, Facility } from '../lib/types';
+import type { Assessment, Facility, Lang } from '../lib/types';
 import { colors, statusColor, StatusKey } from '../theme';
 import { AudioButton } from './AudioButton';
 import { Mascot } from './Mascot';
@@ -14,8 +14,8 @@ import { Escalation } from './SymptomTiles';
 import { Text } from './Text';
 import { Bar, Button, Card, H2, ListRow, MoreLink, P, RiskBadge, Row, SourceTag, StatusPill } from './ui';
 
-export function fmtZ(z: number | null | undefined) {
-  return z === null || z === undefined ? '–' : `${z > 0 ? '+' : ''}${z.toFixed(1)}`;
+export function fmtZ(z: number | null | undefined, lang: Lang = 'en') {
+  return z === null || z === undefined ? '–' : `${z > 0 ? '+' : ''}${fmtNum(z, lang, 1, true)}`;
 }
 
 const TREND: Record<string, { key: StatusKey; id: string; en: string }> = {
@@ -160,7 +160,7 @@ export function TechnicalDetails({ a }: { a: Assessment }) {
   return (
     <View style={{ marginTop: 8 }}>
       <Text style={{ color: colors.muted, fontSize: 13 }}>
-        HAZ {fmtZ(f.haz)} · WAZ {fmtZ(f.waz)} · WHZ {fmtZ(f.whz)}
+        HAZ {fmtZ(f.haz, lang)} · WAZ {fmtZ(f.waz, lang)} · WHZ {fmtZ(f.whz, lang)}
         {stunting === undefined ? ` · ${t('confidence')} ${Math.round(a.confidence * 100)}%` : ''}
       </Text>
       <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 6 }}>

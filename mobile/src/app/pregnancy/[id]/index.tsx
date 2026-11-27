@@ -10,7 +10,7 @@ import { Text } from '../../../components/Text';
 import { Bar, Button, Card, ErrorBox, H2, Loading, QuickAction, Row, Screen, Section, StatusMark, StatusPill } from '../../../components/ui';
 import { api, errorText } from '../../../lib/api';
 import { useAuth } from '../../../lib/auth';
-import { formatDate } from '../../../lib/fun';
+import { fmtNum, formatDate } from '../../../lib/fun';
 import { BIRTH_HELPERS, BIRTH_PLACES, BIRTH_ATTENDANTS, BIRTH_PLACES_DONE, FUNDING, label, motherState, TRANSPORT, VISIT_STATUS, weeksText, FLAG_LABEL } from '../../../lib/pregnancy';
 import type { FacilityLink, Pregnancy } from '../../../lib/types';
 import { useApi } from '../../../lib/useApi';
@@ -150,7 +150,7 @@ export default function PregnancyDetail() {
       <Row style={{ gap: 8, alignItems: 'stretch' }}>
         <MomTile
           label={t('muacShort')}
-          value={p.latest.muac_cm?.toFixed(1) ?? '–'}
+          value={fmtNum(p.latest.muac_cm, lang, 1, true)}
           unit="cm"
           status={p.latest.muac_cm == null ? 'unknown' : kek ? 'action' : 'ok'}
           word={p.latest.muac_cm == null ? t('notMeasured') : kek ? FLAG_LABEL.kek[lang] : 'Normal'}
@@ -159,7 +159,7 @@ export default function PregnancyDetail() {
         />
         <MomTile
           label={t('hbShort')}
-          value={p.latest.hb_g_dl?.toFixed(1) ?? '–'}
+          value={fmtNum(p.latest.hb_g_dl, lang, 1, true)}
           unit="g/dL"
           status={p.latest.hb_g_dl == null ? 'unknown' : anemia ? anemia.status : 'ok'}
           word={p.latest.hb_g_dl == null ? t('notMeasured') : anemia ? FLAG_LABEL[anemia.code][lang] : 'Normal'}

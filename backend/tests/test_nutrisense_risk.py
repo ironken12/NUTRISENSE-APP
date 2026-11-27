@@ -313,3 +313,12 @@ def test_family_questions_api(client, auth):
     assert r.status_code == 200 and r.json()["father_height_cm"] is None and r.json()["household_assets"] == []
     assert client.patch(f"/api/children/{c['id']}", headers=h, json={"household_assets": ["boat"]}).status_code == 422
     assert client.patch(f"/api/children/{c['id']}", headers=h, json={"father_height_cm": 80}).status_code == 422
+
+
+def test_indonesian_texts_use_a_decimal_comma():
+    """Mothers read Indonesian numbers: "TB/U -1,9" and "1,5 dari 8", while English keeps "-1.9"."""
+    from app.services.assessment import _reason
+
+    assert "TB/U -1,9" in _reason("haz_risk", "id", -1.9)["text"] and "HAZ -1.9" in _reason("haz_risk", "en", -1.9)["text"]
+    assert "1,5 dari 8" in _reason("diversity", "id", 1.5)["text"]
+    assert "12,1 cm (di bawah 12,5 cm" in _reason("muac_low", "id", 12.1)["text"]

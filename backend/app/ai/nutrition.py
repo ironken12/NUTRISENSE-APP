@@ -350,7 +350,8 @@ def recommend(child_ctx: dict, intake: dict, risk_level: str | None, lang: str =
         tips.append({"id": "Setiap hari usahakan ada sumber protein hewani: telur, ikan, atau hati ayam.",
                      "en": "Include an animal-source food every day: egg, fish, or chicken liver."}[L])
     if intake.get("dietary_diversity") is not None and not intake.get("mdd_met"):
-        tips.append({"id": f"Keragaman makanan baru {intake['dietary_diversity']} dari 8 kelompok. Targetkan minimal 5 kelompok per hari.",
+        dd_id = f"{intake['dietary_diversity']:g}".replace(".", ",")  # Indonesian decimal comma
+        tips.append({"id": f"Keragaman makanan baru {dd_id} dari 8 kelompok. Targetkan minimal 5 kelompok per hari.",
                      "en": f"Dietary diversity is {intake['dietary_diversity']} of 8 groups. Aim for at least 5 groups a day."}[L])
     if "diarrhea" in (child_ctx.get("symptoms") or []):
         tips.append({"id": "Saat diare, teruskan makan dan ASI, berikan oralit dan zinc 10 hari sesuai anjuran petugas.",
