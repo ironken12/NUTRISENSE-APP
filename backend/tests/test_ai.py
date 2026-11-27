@@ -167,3 +167,30 @@ def test_triage_uses_child_muac():
     t = triage("medium", [], [], {"muac_cm": 12.2}, {}, 18)
     assert any(s["item_key"] == "pmt_biscuit" and s["quantity"] == 2 for s in t["supplies"])
     assert not any(s["item_key"] == "rutf" for s in triage("low", [], [], {"muac_cm": 11.0}, {}, 4)["supplies"])
+
+
+def test_cheap_food_list_is_cheap_and_local():
+    """The "easy, cheap, at the market" list: good value for money, never beef or pork."""
+    from app.ai.kitchen import PRICE_IDR
+
+    for n in ("protein_g", "iron_mg", "vitamin_a_mcg", "zinc_mg", "calcium_mg", "energy_kcal"):
+        foods = nutrition._foods_for(n)
+        assert foods and not {"daging_sapi", "daging_babi", "mie", "biskuit"} & set(foods), (n, foods)
+        assert all(PRICE_IDR.get(f, 1000) < nutrition.CHEAP_PORTION_IDR for f in foods)
+    assert {"tempe", "ikan"} <= set(nutrition._foods_for("protein_g"))
+    assert "daun_kelor" in nutrition._foods_for("iron_mg")
+
+
+def test_ntt_recipes_are_quick_and_safe_for_babies():
+    from app.ai.recipes import RECIPES
+
+    by_key = {r["key"]: r for r in RECIPES}
+    for key in ("catemak_jagung", "sup_ikan_kelor", "nasi_jagung_telur", "ubi_tumbuk_telur_kelor", "bubur_hati_labu"):
+        assert key in by_key
+    # Everything except the traditional family dish (jagung bose) is ready in 20 minutes.
+    assert all(r["minutes"] <= 20 for r in RECIPES if r["key"] != "jagung_bose_ikan")
+    # Recipes for babies under 1 year never add salt or sugar.
+    for r in RECIPES:
+        if r["min_age"] < 12:
+            text = " ".join(r["ingredients"]["id"]).lower()
+            assert "garam" not in text and "gula" not in text, r["key"]

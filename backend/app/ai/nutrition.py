@@ -7,6 +7,8 @@ education and screening, not for clinical dietetics.
 """
 from __future__ import annotations
 
+import math
+
 import base64
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
@@ -156,11 +158,18 @@ def analyse_intake(meals: list, age_months: float, days: int = 7, lang: str = "i
     }
 
 
+CHEAP_PORTION_IDR = 6000  # "easy and cheap" foods: a child's portion costs less than this in an NTT village market
+
+
 def _foods_for(nutrient: str, limit: int = 4) -> list[str]:
-    ranked = sorted(
-        (f for f in FOODS.values() if f["key"] not in ("asi", "biskuit", "mie", "pmt_biskuit")),
-        key=lambda f: -f["per100"][nutrient] * f["portion_g"] / 100,
-    )
+    """Good-value local foods for a nutrient: the amount in one child's portion divided by the square root of its price
+    (so a cheap food counts for more, without leaves beating eggs and fish for protein). Free garden leaves (kelor,
+    cassava leaves) count as Rp 1.000; foods costing Rp 6.000 or more a portion (beef, pork) are left out."""
+    from .kitchen import PRICE_IDR  # kitchen imports this module
+
+    pool = [f for f in FOODS.values() if f["key"] not in ("asi", "biskuit", "mie", "pmt_biskuit")
+            and PRICE_IDR.get(f["key"], 1000) < CHEAP_PORTION_IDR]
+    ranked = sorted(pool, key=lambda f: -(f["per100"][nutrient] * f["portion_g"] / 100) / math.sqrt(max(PRICE_IDR.get(f["key"], 1000), 1000)))
     return [f["key"] for f in ranked[:limit]]
 
 

@@ -81,6 +81,18 @@ export default function MealScreen() {
   const foodList = useApi<{ foods: Food[] }>(`/api/foods?lang=${lang}`);
   const foods = useMemo(() => foodList.data?.foods ?? [], [foodList.data]);
 
+  // The foods this child has eaten most often (last 50 meals): one tap instead of scrolling the whole list.
+  const pastMeals = useApi<Meal[]>(`/api/children/${id}/meals?limit=50`);
+  const often = useMemo(() => {
+    const count = new Map<string, number>();
+    for (const m of pastMeals.data ?? []) for (const it of m.items) count.set(it.food_key, (count.get(it.food_key) ?? 0) + 1);
+    return [...count.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([k]) => foods.find((f) => f.key === k))
+      .filter((f): f is Food => !!f)
+      .slice(0, 6);
+  }, [pastMeals.data, foods]);
+
   const foodName = (key: string) => foods.find((f) => f.key === key)?.name ?? key;
   const groupOf = (key: string) => foods.find((f) => f.key === key)?.group;
   const mealGroups = useMemo(() => [...new Set(items.map((i) => groupOf(i.food_key)).filter(Boolean) as string[])], [items, foods]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -357,6 +369,16 @@ export default function MealScreen() {
           placeholderTextColor={colors.muted}
           style={{ borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 10, marginBottom: 10, fontSize: 16 }}
         />
+        {!filter && often.length > 0 && (
+          <View style={{ marginBottom: 8 }}>
+            <Text style={{ fontWeight: '800', fontSize: 14, marginBottom: 6 }}>⭐ {t('oftenUsed')}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {often.map((f) => (
+                <Chip key={f.key} emoji={FOOD_EMOJI[f.key]} label={f.name} selected={items.some((i) => i.food_key === f.key)} onPress={() => add(f)} />
+              ))}
+            </View>
+          </View>
+        )}
         {/* Grouped like the 8 food groups, so a mother can see which group is still missing. */}
         {FOOD_GROUPS.map((g) => {
           const inGroup = shown.filter((f) => f.group === g.key);

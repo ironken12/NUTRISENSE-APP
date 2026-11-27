@@ -100,13 +100,13 @@ RECIPES: list[dict] = [
                   "en": ["Boil the chicken liver until cooked, then chop finely.", "Sauté briefly with the grated carrot.", "Mix into soft rice. Liver 1–2 times a week is enough."]},
     },
     {
-        "key": "bubur_kacang_hijau", "min_age": 8, "minutes": 25, "cost": 1, "meal": "snack",
+        "key": "bubur_kacang_hijau", "min_age": 8, "minutes": 20, "cost": 1, "meal": "snack",
         "foods": ["kacang_hijau", "pisang"], "targets": ["protein_g", "energy_kcal"],
         "name": {"id": "Bubur kacang hijau pisang", "en": "Mung bean porridge with banana"},
         "ingredients": {"id": ["3 sdm kacang hijau (rendam semalam)", "½ pisang matang", "1,5 gelas air"],
                         "en": ["3 tbsp mung beans (soaked overnight)", "½ ripe banana", "1.5 glasses of water"]},
-        "steps": {"id": ["Rebus kacang hijau sampai pecah dan empuk.", "Haluskan bersama pisang sebagai pemanis alami.", "Tidak perlu gula."],
-                  "en": ["Boil the mung beans until they split and soften.", "Mash with the banana as a natural sweetener.", "No sugar needed."]},
+        "steps": {"id": ["Rebus kacang hijau ±15 menit sampai pecah dan empuk.", "Haluskan bersama pisang sebagai pemanis alami.", "Tidak perlu gula."],
+                  "en": ["Boil the mung beans for about 15 minutes until they split and soften.", "Mash with the banana as a natural sweetener.", "No sugar needed."]},
     },
     {
         "key": "telur_orak_bayam", "min_age": 9, "minutes": 10, "cost": 1, "meal": "main",
@@ -206,6 +206,61 @@ RECIPES: list[dict] = [
         "steps": {"id": ["Rebus daun singkong sampai sangat empuk (±10 menit), cincang halus.", "Tumis sebentar dengan bawang putih dan teri.", "Sajikan dengan nasi."],
                   "en": ["Boil the cassava leaves until very tender (about 10 minutes); chop finely.", "Sauté briefly with the garlic and anchovies.", "Serve with rice."]},
     },
+    # Everyday NTT dishes, made simple and safe for children (added after a review of the menu for NTT families).
+    {
+        "key": "bubur_hati_labu", "min_age": 6, "minutes": 20, "cost": 1, "meal": "main",
+        "foods": ["bubur_beras", "hati_ayam", "labu"], "targets": ["iron_mg", "vitamin_a_mcg", "zinc_mg"],
+        "name": {"id": "Bubur hati ayam labu kuning", "en": "Rice porridge with chicken liver and pumpkin"},
+        "ingredients": {"id": ["3 sdm nasi", "1 sdm hati ayam", "1 potong labu kuning", "1,5 gelas air"],
+                        "en": ["3 tbsp cooked rice", "1 tbsp chicken liver", "1 piece pumpkin", "1.5 glasses of water"]},
+        "steps": {"id": ["Rebus hati ayam 10 menit sampai matang benar, lalu cincang halus.", "Masak nasi, labu potong kecil dan air jadi bubur; masukkan hati 2 menit terakhir.", "Saring sampai lembut untuk bayi 6–8 bulan. Tanpa garam di bawah 1 tahun."],
+                  "en": ["Boil the liver for 10 minutes until fully cooked, then chop finely.", "Cook the rice, diced pumpkin and water into porridge; add the liver for the last 2 minutes.", "Sieve until smooth for babies aged 6–8 months. No salt under 1 year."]},
+    },
+    {
+        "key": "bubur_labu_kacang_hijau", "min_age": 8, "minutes": 20, "cost": 1, "meal": "snack",
+        "foods": ["labu", "kacang_hijau"], "targets": ["vitamin_a_mcg", "protein_g", "energy_kcal"],
+        "name": {"id": "Bubur labu kacang hijau", "en": "Pumpkin and mung bean porridge"},
+        "ingredients": {"id": ["2 sdm kacang hijau (rendam semalam)", "1 potong labu kuning", "1,5 gelas air"],
+                        "en": ["2 tbsp mung beans (soaked overnight)", "1 piece pumpkin", "1.5 glasses of water"]},
+        "steps": {"id": ["Rebus kacang hijau 15 menit sampai pecah.", "Masukkan labu potong kecil, masak 5 menit sampai empuk.", "Haluskan. Tanpa gula untuk anak di bawah 1 tahun."],
+                  "en": ["Boil the mung beans for 15 minutes until they split.", "Add the diced pumpkin and cook 5 minutes until soft.", "Mash. No sugar for children under 1 year."]},
+    },
+    {
+        "key": "catemak_jagung", "min_age": 9, "minutes": 20, "cost": 1, "meal": "main",
+        "foods": ["jagung", "labu", "kacang_hijau", "daun_kelor"], "targets": ["vitamin_a_mcg", "protein_g", "iron_mg"],
+        "name": {"id": "Catemak jagung kelor", "en": "Catemak: corn soup with pumpkin and moringa"},
+        "ingredients": {"id": ["3 sdm jagung pipil muda", "2 sdm kacang hijau (rendam semalam)", "1 potong labu kuning", "1 genggam daun kelor", "2 gelas air"],
+                        "en": ["3 tbsp young corn kernels", "2 tbsp mung beans (soaked overnight)", "1 piece pumpkin", "1 handful moringa leaves", "2 glasses of water"]},
+        "steps": {"id": ["Rebus jagung dan kacang hijau 12 menit sampai empuk.", "Masukkan labu potong kecil 5 menit, lalu daun kelor 2 menit.", "Lumatkan porsi anak. Garam ditambahkan hanya untuk keluarga, setelah porsi anak diambil."],
+                  "en": ["Boil the corn and mung beans for 12 minutes until soft.", "Add the diced pumpkin for 5 minutes, then the moringa for 2 minutes.", "Mash the child's portion. Salt only for the family, after the child's portion is taken out."]},
+    },
+    {
+        "key": "sup_ikan_kelor", "min_age": 9, "minutes": 15, "cost": 1, "meal": "main",
+        "foods": ["ikan", "daun_kelor", "nasi"], "targets": ["protein_g", "iron_mg", "calcium_mg"],
+        "name": {"id": "Sup ikan kuah kelor", "en": "Fish soup with moringa"},
+        "ingredients": {"id": ["1 potong ikan laut (tongkol/kembung)", "1 genggam daun kelor", "1 siung bawang putih", "1,5 gelas air", "3 sdm nasi"],
+                        "en": ["1 piece sea fish (tuna/mackerel)", "1 handful moringa leaves", "1 garlic clove", "1.5 glasses of water", "3 tbsp cooked rice"]},
+        "steps": {"id": ["Didihkan air dengan bawang putih, masukkan ikan, masak 8 menit.", "Angkat ikan, buang semua duri, suwir halus; rebus daun kelor di kuah 2 menit.", "Sajikan ikan dan kuah dengan nasi; lumatkan untuk anak di bawah 1 tahun."],
+                  "en": ["Boil the water with the garlic, add the fish and cook 8 minutes.", "Take out the fish, remove every bone and shred finely; cook the moringa in the broth for 2 minutes.", "Serve the fish and broth with rice; mash for children under 1 year."]},
+    },
+    {
+        "key": "ubi_tumbuk_telur_kelor", "min_age": 9, "minutes": 15, "cost": 1, "meal": "main",
+        "foods": ["ubi_jalar", "telur", "daun_kelor"], "targets": ["vitamin_a_mcg", "protein_g", "iron_mg"],
+        "name": {"id": "Ubi tumbuk telur kelor", "en": "Mashed sweet potato with egg and moringa"},
+        "ingredients": {"id": ["1 potong ubi jalar oranye", "1 butir telur", "1 genggam kecil daun kelor"],
+                        "en": ["1 piece orange sweet potato", "1 egg", "1 small handful moringa leaves"]},
+        "steps": {"id": ["Kukus ubi 10 menit; rebus telur sampai matang benar.", "Rebus daun kelor 2 menit, cincang halus.", "Lumatkan ubi, telur dan kelor jadi satu; tambah air matang bila terlalu kental."],
+                  "en": ["Steam the sweet potato for 10 minutes; boil the egg until fully set.", "Boil the moringa for 2 minutes and chop finely.", "Mash the sweet potato, egg and moringa together; add boiled water if too thick."]},
+    },
+    {
+        "key": "nasi_jagung_telur", "min_age": 12, "minutes": 20, "cost": 1, "meal": "main",
+        "foods": ["jagung", "nasi", "telur", "daun_singkong"], "targets": ["protein_g", "vitamin_a_mcg", "energy_kcal"],
+        "name": {"id": "Nasi jagung, telur dan daun singkong", "en": "Corn rice with egg and cassava leaves"},
+        "ingredients": {"id": ["2 sdm jagung giling (beras jagung)", "3 sdm beras", "1 butir telur", "1 genggam daun singkong muda"],
+                        "en": ["2 tbsp ground corn (corn rice)", "3 tbsp rice", "1 egg", "1 handful young cassava leaves"]},
+        "steps": {"id": ["Tanak beras dan jagung giling bersama seperti menanak nasi.", "Rebus daun singkong sampai sangat empuk, cincang halus; rebus telur sampai matang.", "Sajikan nasi jagung lembek dengan telur potong kecil dan sayur daun singkong."],
+                  "en": ["Cook the rice and ground corn together like ordinary rice.", "Boil the cassava leaves until very tender and chop finely; boil the egg until set.", "Serve the soft corn rice with small pieces of egg and the cassava leaves."]},
+    }
 ]
 
 COST_LABEL = {1: {"id": "Hemat", "en": "Budget"}, 2: {"id": "Terjangkau", "en": "Affordable"}}

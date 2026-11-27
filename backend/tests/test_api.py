@@ -379,7 +379,14 @@ def test_simple_menu_idea_and_recipe_list(client, auth):
     r = client.post(f"/api/children/{cid}/menu-suggestions", headers=h, json={"items": [{"food_key": "nasi"}]}).json()
     assert r["simple_idea"]["text"].startswith("Tambahkan") and any(g["key"] == "grains_roots" for g in r["present_groups"])
     recipes = client.get(f"/api/children/{cid}/recipes", headers=h).json()
-    assert len(recipes) >= 10 and recipes[0]["minutes"] <= recipes[-1]["minutes"]
+    assert len(recipes) >= 10
+    # Most nourishing first: a main meal with an animal-source food, and every snack after the main meals.
+    from app.ai.recipes import RECIPES
+    by_key = {r["key"]: r for r in RECIPES}
+    first = by_key[recipes[0]["key"]]
+    assert first["meal"] == "main" and {"telur", "ikan", "ikan_teri", "ayam", "hati_ayam"} & set(first["foods"])
+    meals = [by_key[r["key"]]["meal"] for r in recipes]
+    assert meals == sorted(meals, key=lambda m: m != "main")
 
 
 def test_account_settings_and_password_change(client):

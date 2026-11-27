@@ -134,11 +134,21 @@ def save_development(child_id: int, body: DevelopmentIn, lang: str | None = None
 
 @router.get("/children/{child_id}/recipes")
 def child_recipes(child_id: int, lang: str | None = None, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """All easy recipes suitable for the child's age, quickest first."""
+    """All easy recipes suitable for the child's age, most nourishing first: main meals before snacks; meals with an
+    animal-source food (egg, fish, liver: WHO advises one every day) first; then more of protein, iron, vitamin A and
+    zinc; then quicker and cheaper. Over 1 year, baby purees (made for 6-8 months) come after family-texture meals."""
     child = get_child(child_id, db, user)
     age = age_in_months(child.birth_date, date.today())
     L = lang_of(user, lang)
-    rows = sorted((r for r in RECIPES if r["min_age"] <= age), key=lambda r: (r["minutes"], r["cost"]))
+    animal = {"telur", "ikan", "ikan_teri", "ayam", "hati_ayam", "daging_sapi", "daging_babi"}
+    key_nutrients = {"protein_g", "iron_mg", "vitamin_a_mcg", "zinc_mg"}
+
+    def rank(r: dict) -> tuple:
+        baby_texture = age >= 12 and r["min_age"] < 9
+        return (r["meal"] != "main", baby_texture, not (animal & set(r["foods"])), -len(key_nutrients & set(r["targets"])),
+                r["minutes"], r["cost"])
+
+    rows = sorted((r for r in RECIPES if r["min_age"] <= age), key=rank)
     return [nutrition.recipe_view(r, L) for r in rows]
 
 
