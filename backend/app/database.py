@@ -31,6 +31,7 @@ _ADDED_COLUMNS = {
     "meal_logs": {"client_uuid": "VARCHAR(64)"},
     "symptom_reports": {"client_uuid": "VARCHAR(64)"},
     "regions": {"puskesmas_name": "VARCHAR(160)", "puskesmas_phone": "VARCHAR(40)", "facility_km": "FLOAT", "posyandu_day": "INTEGER"},
+    "supply_requests": {"pregnancy_id": "INTEGER"},
     "children": {"birth_gestational_weeks": "FLOAT", "father_height_cm": "FLOAT", "mother_age_at_birth": "FLOAT",
                  "birth_order": "INTEGER", "household_under5": "INTEGER", "household_assets": "JSON"},
     "growth_measurements": {"measured_by": "VARCHAR(10)", "oedema": "BOOLEAN"},
@@ -41,7 +42,7 @@ _ADDED_COLUMNS = {
                     "linked_facility_id": "INTEGER", "last_sync_at": "TIMESTAMP WITH TIME ZONE"},
 }
 # Columns that became optional: phone-only accounts have no email.
-_RELAXED_NOT_NULL = {"users": ["email"]}
+_RELAXED_NOT_NULL = {"users": ["email"], "supply_requests": ["child_id"]}
 # Indexes declared on existing columns later (create_all only indexes new tables). Names follow SQLAlchemy's ix_<table>_<column>.
 _ADDED_INDEXES = {"ix_users_phone": ("users", "phone"), "ix_cases_status": ("cases", "status"),
                   "ix_supply_requests_pickup_code": ("supply_requests", "pickup_code")}

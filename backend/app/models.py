@@ -288,7 +288,9 @@ class InventoryItem(Base):
 class SupplyRequest(Base):
     __tablename__ = "supply_requests"
     id: Mapped[int] = mapped_column(primary_key=True)
-    child_id: Mapped[int] = mapped_column(ForeignKey("children.id"), index=True)
+    # For a child, or for a pregnant mother (PMT ibu hamil, iron tablets): exactly one of the two is set.
+    child_id: Mapped[int | None] = mapped_column(ForeignKey("children.id"), nullable=True, index=True)
+    pregnancy_id: Mapped[int | None] = mapped_column(ForeignKey("pregnancies.id"), nullable=True, index=True)
     case_id: Mapped[int | None] = mapped_column(ForeignKey("cases.id"), nullable=True)
     requested_by_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     items: Mapped[list] = mapped_column(JSON, default=list)  # [{item_key, quantity}]
@@ -306,8 +308,24 @@ class SupplyRequest(Base):
     expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
-    child: Mapped[Child] = relationship()
+    child: Mapped[Child | None] = relationship()
+    pregnancy: Mapped["Pregnancy | None"] = relationship()
     locker: Mapped[Locker | None] = relationship()
+
+    @property
+    def family_user_id(self) -> int:
+        """The account that collects the package: the child's caregiver or the pregnant mother."""
+        return self.child.caregiver_id if self.child else self.pregnancy.mother_id
+
+    @property
+    def recipient_name(self) -> str:
+        return self.child.name if self.child else self.pregnancy.mother.full_name
+
+    @property
+    def region(self) -> "Region | None":
+        if self.child:
+            return self.child.region or self.child.caregiver.region
+        return self.pregnancy.region or self.pregnancy.mother.region
 
 
 class Consent(Base):

@@ -114,6 +114,19 @@ export default function Pickups() {
       {reqs.error && <ErrorBox message={reqs.error} onRetry={reqs.reload} />}
       {!reqs.data && <Loading />}
 
+      {/* Packages for the mother's own pregnancy (PMT ibu hamil, iron tablets) */}
+      {all.some((r) => r.pregnancy_id) && (
+        <View>
+          <Section title={t('forMeInPregnancy')} />
+          {all
+            .filter((r) => r.pregnancy_id)
+            .sort((a, b) => order(a) - order(b))
+            .map((r) => (
+              <PackageCard key={r.id} r={r} />
+            ))}
+        </View>
+      )}
+
       {kids.map((c) => {
         const mine = all.filter((r) => r.child_id === c.id).sort((a, b) => order(a) - order(b));
         const st = motherStatus(c.latest_assessment);

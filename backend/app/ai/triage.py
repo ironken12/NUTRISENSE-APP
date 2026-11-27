@@ -16,12 +16,15 @@ SUPPLY_CATALOG = {
     "kelor_powder": {"name": {"id": "Bubuk daun kelor 100 g", "en": "Moringa leaf powder 100 g"}, "weight_kg": 0.1, "needs_doctor": False},
     "vitamin_a": {"name": {"id": "Kapsul vitamin A", "en": "Vitamin A capsule"}, "weight_kg": 0.01, "needs_doctor": False},
     "deworming": {"name": {"id": "Obat cacing (albendazol)", "en": "Deworming tablet (albendazole)"}, "weight_kg": 0.01, "needs_doctor": True},
+    # For pregnant mothers (Kemenkes): supplementary food for KEK, iron-folic acid tablets (TTD) for anaemia.
+    "pmt_bumil": {"name": {"id": "PMT ibu hamil (biskuit, 7 hari)", "en": "Supplementary food for pregnancy (7 days)"}, "weight_kg": 0.6, "needs_doctor": False},
+    "ttd": {"name": {"id": "Tablet tambah darah (30 tablet)", "en": "Iron-folic acid tablets (30)"}, "weight_kg": 0.05, "needs_doctor": False},
 }
 
 _ACTIONS = {
     "go_facility_now": {"id": "Segera bawa anak ke Puskesmas atau rumah sakit terdekat sekarang.", "en": "Take the child to the nearest Puskesmas or hospital now."},
     "keep_breastfeeding": {"id": "Tetap berikan ASI/minum sedikit-sedikit tapi sering selama perjalanan.", "en": "Keep breastfeeding / giving small frequent sips on the way."},
-    "doctor_48h": {"id": "Jadwalkan konsultasi dokter dalam 48 jam. Kader akan membantu rujukan.", "en": "Book a doctor consultation within 48 hours. The Kader will help with the referral."},
+    "doctor_48h": {"id": "Rujuk ke Puskesmas: periksakan anak ke dokter dalam 48 jam. Kader akan membantu rujukan.", "en": "Referral to the Puskesmas: see a doctor within 48 hours. The Kader will help with the referral."},
     "kader_visit": {"id": "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.", "en": "A Kader will visit within 7 days to re-measure and give feeding counselling."},
     "posyandu_monthly": {"id": "Lanjutkan penimbangan dan pengukuran rutin setiap bulan di Posyandu.", "en": "Continue monthly weighing and measuring at the Posyandu."},
     "follow_nutrition_plan": {"id": "Ikuti rencana gizi mingguan di aplikasi.", "en": "Follow the weekly nutrition plan in the app."},
@@ -44,6 +47,7 @@ def triage(
     age_months: float,
     intake: dict | None = None,
     lang: str = "id",
+    weight_not_gaining: float = 0,
 ) -> dict:
     intake = intake or {}
     # Oedema of both feet is a sign of severe acute malnutrition (IMCI): refer now, like a danger sign.
@@ -77,17 +81,24 @@ def triage(
     muac = z.get("muac_cm") if age_months >= 6 else None
     severe_wasting = (whz is not None and whz < -3) or (muac is not None and muac < 11.5)
     wasting = (whz is not None and whz < -2) or (muac is not None and muac < 12.5)
+    # Supplementary food is for a growth problem the measurements show: wasting, stunting, underweight, a weighing
+    # without enough gain (T or 2T) or a falling growth line. A "medium" from the background risk model alone (normal
+    # growth, e.g. while the family details are still unknown) gets the Kader visit and advice, not a food package.
+    waz = z.get("waz")
+    growth_problem = (wasting or severe_wasting or (haz is not None and haz < -2) or (waz is not None and waz < -2)
+                      or weight_not_gaining >= 1 or trend.get("status") in ("declining", "projected_stunting"))
+    package = growth_problem or risk_level == "high"
     if "diarrhea" in symptoms:
         supplies.append({"item_key": "ors_zinc", "quantity": 1})
     if severe_wasting:
         supplies.append({"item_key": "rutf", "quantity": 2})
     elif wasting or risk_level == "high":
         supplies.append({"item_key": "pmt_biscuit", "quantity": 2})
-    elif risk_level == "medium":
+    elif risk_level == "medium" and package:
         supplies.append({"item_key": "pmt_biscuit", "quantity": 1})
-    if risk_level in ("medium", "high") and 6 <= age_months < 24 and (intake.get("mdd_met") is False or intake.get("days_logged", 0) == 0):
+    if package and risk_level in ("medium", "high") and 6 <= age_months < 24 and (intake.get("mdd_met") is False or intake.get("days_logged", 0) == 0):
         supplies.append({"item_key": "mnp_taburia", "quantity": 1})
-    if risk_level in ("medium", "high") and age_months >= 6 and "kelor_powder" not in [s["item_key"] for s in supplies]:
+    if package and risk_level in ("medium", "high") and age_months >= 6 and "kelor_powder" not in [s["item_key"] for s in supplies]:
         supplies.append({"item_key": "kelor_powder", "quantity": 1})
     if supplies and urgency != "emergency":
         actions.insert(1, _a("pickup_supplies", lang))

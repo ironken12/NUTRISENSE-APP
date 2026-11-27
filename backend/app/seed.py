@@ -178,15 +178,16 @@ def seed_if_empty(db: Session) -> bool:
     hub_kpg = Locker(code="HUB-KPG", name="Hub Gudang Farmasi Kota Kupang", kind="hub", region_id=oesapa.id, lat=-10.1580, lng=123.6000, slots_total=500)
     hub_soe = Locker(code="HUB-SOE", name="Hub Dinkes TTS (Soe)", kind="hub", region_id=soe.id, lat=-9.8650, lng=124.2750, slots_total=300)
     for hub in (hub_kpg, hub_soe):
-        _stock(hub, pmt_biscuit=200, rutf=80, ors_zinc=150, mnp_taburia=150, kelor_powder=120, vitamin_a=300, deworming=200)
+        _stock(hub, pmt_biscuit=200, rutf=80, ors_zinc=150, mnp_taburia=150, kelor_powder=120, vitamin_a=300, deworming=200,
+               pmt_bumil=120, ttd=200)
     lockers = {}
     for r, code, stock in (
-        (oesapa, "LKR-OSP", dict(pmt_biscuit=12, ors_zinc=10, mnp_taburia=10, kelor_powder=8, vitamin_a=20)),
-        (baumata, "LKR-BMT", dict(pmt_biscuit=6, ors_zinc=5, mnp_taburia=4, kelor_powder=4, vitamin_a=10)),
+        (oesapa, "LKR-OSP", dict(pmt_biscuit=12, ors_zinc=10, mnp_taburia=10, kelor_powder=8, vitamin_a=20, pmt_bumil=6, ttd=10)),
+        (baumata, "LKR-BMT", dict(pmt_biscuit=6, ors_zinc=5, mnp_taburia=4, kelor_powder=4, vitamin_a=10, pmt_bumil=4, ttd=6)),
         (semau, "LKR-SMU", dict(pmt_biscuit=1, ors_zinc=2)),
-        (soe, "LKR-SOE", dict(pmt_biscuit=10, ors_zinc=8, mnp_taburia=6, kelor_powder=6, rutf=4, vitamin_a=15)),
+        (soe, "LKR-SOE", dict(pmt_biscuit=10, ors_zinc=8, mnp_taburia=6, kelor_powder=6, rutf=4, vitamin_a=15, pmt_bumil=4, ttd=6)),
         (oinlasi, "LKR-OIN", dict(pmt_biscuit=2, ors_zinc=3, kelor_powder=1)),
-        (baa, "LKR-BAA", dict(pmt_biscuit=5, ors_zinc=6, mnp_taburia=3, kelor_powder=3, vitamin_a=8)),
+        (baa, "LKR-BAA", dict(pmt_biscuit=5, ors_zinc=6, mnp_taburia=3, kelor_powder=3, vitamin_a=8, pmt_bumil=2, ttd=4)),
     ):
         lk = Locker(code=code, name=f"Loker Posyandu {r.name}", kind="locker", region_id=r.id, lat=r.lat + 0.002, lng=r.lng + 0.002)
         _stock(lk, **stock)

@@ -10,10 +10,11 @@ from sqlalchemy.orm import Session
 from .. import serializers as S
 from ..ai import growth, maternal as M
 from ..ai.assistant import _PREG_LABELS  # the pregnancy danger-sign labels Nuri already uses
+from ..ai.triage import SUPPLY_CATALOG
 from ..database import get_db
 from ..deps import OVERSIGHT, STAFF, get_current_user, lang_of, require_roles
 from ..models import (AncExam, AncVisit, Child, Consent, HealthFacility, MaternalMeasurement, Pregnancy, PregnancyDailyLog, PregnancyDangerReport,
-                      Region, User, utcnow)
+                      Region, SupplyRequest, User, utcnow)
 from ..schemas import MeasurementIn, MotherRegisterIn
 from ..security import hash_password
 from ..services.assessment import run_assessment
@@ -358,6 +359,27 @@ def update_pregnancy(pid: int, body: PregnancyUpdateIn, user: User = Depends(get
     return view(db, p, lang_of(user))
 
 
+def _request_mother_supplies(db: Session, p: Pregnancy, flags: list[dict], actor: User) -> None:
+    """KEK -> supplementary food for pregnancy (PMT ibu hamil); anaemia -> iron-folic acid tablets (TTD), as in the
+    Kemenkes programme. One open request per pregnancy; it follows the same officer approval, locker and pickup code
+    as a child's package."""
+    codes = {f["code"] for f in flags}
+    items = ([{"item_key": "pmt_bumil", "quantity": 2}] if "kek" in codes else []) + \
+            ([{"item_key": "ttd", "quantity": 1}] if codes & {"anemia", "severe_anemia"} else [])
+    if not items:
+        return
+    open_req = db.scalar(select(SupplyRequest).where(
+        SupplyRequest.pregnancy_id == p.id,
+        SupplyRequest.status.in_(["pending_approval", "awaiting_stock", "in_transit", "ready_for_pickup"])))
+    if open_req is not None:
+        return
+    db.add(SupplyRequest(pregnancy_id=p.id, requested_by_id=actor.id, items=items, urgency="kader_7d", status="pending_approval"))
+    notify_roles(db, ["officer"], p.region_id, "supply_requested", {"id": "Permintaan paket ibu hamil", "en": "Supply request for a pregnant mother"},
+                 {"id": f"{p.mother.full_name}: " + ", ".join(SUPPLY_CATALOG[i["item_key"]]["name"]["id"] for i in items),
+                  "en": f"{p.mother.full_name}: " + ", ".join(SUPPLY_CATALOG[i["item_key"]]["name"]["en"] for i in items)},
+                 pregnancy_id=p.id)
+
+
 @router.post("/pregnancies/{pid}/measurements", status_code=201)
 def add_mother_measurement(pid: int, body: MotherMeasurementIn, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     p = get_pregnancy(pid, db, user)
@@ -381,6 +403,7 @@ def add_mother_measurement(pid: int, body: MotherMeasurementIn, user: User = Dep
         text = ", ".join(names[f["code"]] for f in flags if f["code"] in names)
         notify_roles(db, ["kader"], p.region_id, "mother_flag", {"id": "Ibu hamil perlu perhatian", "en": "Pregnant mother needs attention"},
                      f"{p.mother.full_name}: {text}", pregnancy_id=p.id)
+        _request_mother_supplies(db, p, flags, user)
     audit(db, user, "record_mother_measurement", "pregnancy", p.id, measurement_id=m.id)
     db.commit()
     return {"measurement": _measurement(m), "flags": flags, "created": True}

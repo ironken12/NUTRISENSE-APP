@@ -16,7 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..ai.triage import SUPPLY_CATALOG
-from ..deps import can_access_child
+from ..deps import can_access_request
 from ..models import Child, InventoryItem, Locker, Region, SupplyRequest, User
 from ..security import sign_payload
 from .common import audit, notify, notify_roles
@@ -67,16 +67,16 @@ def check_stock(locker: Locker, items: list[dict]) -> bool:
     return all(k["item_key"] in inv and available(inv[k["item_key"]]) >= k["quantity"] for k in items)
 
 
-def _child_location(child: Child) -> tuple[float, float, Region | None]:
-    region = child.region or child.caregiver.region
+def _request_location(req: SupplyRequest) -> tuple[float, float, Region | None]:
+    region = req.region  # the child's (or the pregnant mother's) village
     if region is None:
-        raise ValueError("Child has no region; cannot plan logistics")
+        raise ValueError("No region for this request; cannot plan logistics")
     return region.lat, region.lng, region
 
 
 def plan(db: Session, req: SupplyRequest) -> dict:
     """Evaluate every feasible supply pathway and pick one (simulateRoute)."""
-    lat, lng, region = _child_location(req.child)
+    lat, lng, region = _request_location(req)
     lockers = db.scalars(select(Locker).where(Locker.kind == "locker", Locker.status == "online")).all()
     hubs = db.scalars(select(Locker).where(Locker.kind == "hub", Locker.status == "online")).all()
     options: list[dict] = []
@@ -139,7 +139,7 @@ def _move_stock(db: Session, src: Locker, dst: Locker, items: list[dict]) -> Non
 
 def _notify_ready(db: Session, req: SupplyRequest) -> None:
     locker = req.locker
-    notify(db, req.child.caregiver_id, "pickup_ready",
+    notify(db, req.family_user_id, "pickup_ready",
            {"id": "Paket gizi siap diambil", "en": "Nutrition package ready"},
            {"id": f"{locker.name} ({locker.code}). Kode: {req.pickup_code}. Berlaku {PICKUP_VALID_DAYS} hari.",
             "en": f"{locker.name} ({locker.code}). Code: {req.pickup_code}. Valid for {PICKUP_VALID_DAYS} days."},
@@ -185,7 +185,7 @@ def approve(db: Session, req: SupplyRequest, approver: User, override_option: in
         for it in req.items:
             inv[it["item_key"]].reserved += it["quantity"]
         req.status = "in_transit"
-        notify(db, req.child.caregiver_id, "supply_in_transit", {"id": "Paket gizi sedang dikirim", "en": "Package on the way"},
+        notify(db, req.family_user_id, "supply_in_transit", {"id": "Paket gizi sedang dikirim", "en": "Package on the way"},
                {"id": f"Perkiraan tiba ~{eta_text(chosen['eta_minutes'])} di {chosen['locker_name']}.",
                 "en": f"Arrives in about {eta_text(chosen['eta_minutes'], 'en')} at {chosen['locker_name']}."}, supply_request_id=req.id)
     audit(db, approver, "approve_supply", "supply_request", req.id, fulfillment=chosen["type"], locker=chosen.get("locker_code"))
@@ -212,7 +212,7 @@ def tick(db: Session, fast_forward_minutes: float = 0) -> dict:
             for it in req.items:
                 inv[it["item_key"]].reserved -= it["quantity"]
             req.status = "expired"
-            notify(db, req.child.caregiver_id, "pickup_expired", {"id": "Kode kedaluwarsa", "en": "Pickup expired"},
+            notify(db, req.family_user_id, "pickup_expired", {"id": "Kode kedaluwarsa", "en": "Pickup expired"},
                    {"id": "Hubungi Kader untuk menjadwalkan ulang.", "en": "Contact your Kader to reschedule."}, supply_request_id=req.id)
     db.commit()
     return {"couriers_delivered": delivered}
@@ -244,7 +244,7 @@ def verify_pickup(db: Session, locker_code: str, pickup_code: str | None, qr_pay
                                                     SupplyRequest.status == "ready_for_pickup"))
     L = "id" if lang == "id" else "en"
     if (req is None or req.locker_id != locker.id or req.pickup_code != pickup_code
-            or not can_access_child(actor, req.child)):  # only the family or staff covering the child's village
+            or not can_access_request(actor, req)):  # only the family or staff covering their village
         raise CodeMismatch({"id": "Kode tidak cocok untuk loker ini. Periksa lagi 6 angkanya.",
                             "en": "This code does not match this locker. Check the 6 digits again."}[L])
     if req.status != "ready_for_pickup":

@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from .. import serializers as S
 from ..ai.triage import SUPPLY_CATALOG
 from ..database import get_db
-from ..deps import OVERSIGHT, STAFF, can_access_child, get_child, get_current_user, lang_of, require_roles
+from ..deps import OVERSIGHT, STAFF, can_access_child, can_access_request, get_child, get_current_user, lang_of, require_roles
 from ..models import Locker, SupplyRequest, User
 from ..schemas import ApproveIn, PickupIn, RejectIn, RestockIn, SupplyRequestIn
 from ..services import logistics
@@ -77,9 +77,9 @@ def pickup(locker_code: str, body: PickupIn, user: User = Depends(get_current_us
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(e))
     except PermissionError as e:
         raise HTTPException(status.HTTP_403_FORBIDDEN, str(e))
-    notify(db, req.child.caregiver_id, "picked_up", {"id": "Paket diambil", "en": "Package collected"},
-           {"id": f"Paket untuk {req.child.name} telah diambil dari loker {locker_code}.",
-            "en": f"The package for {req.child.name} was collected from locker {locker_code}."}, supply_request_id=req.id)
+    notify(db, req.family_user_id, "picked_up", {"id": "Paket diambil", "en": "Package collected"},
+           {"id": f"Paket untuk {req.recipient_name} telah diambil dari loker {locker_code}.",
+            "en": f"The package for {req.recipient_name} was collected from locker {locker_code}."}, supply_request_id=req.id)
     db.commit()
     return {"ok": True, "supply_request": S.supply_request(req, lang_of(user), include_code=False)}
 
@@ -87,7 +87,7 @@ def pickup(locker_code: str, body: PickupIn, user: User = Depends(get_current_us
 def _visible_requests(db: Session, user: User):
     q = select(SupplyRequest).order_by(SupplyRequest.id.desc())
     rows = db.scalars(q).all()
-    return [r for r in rows if can_access_child(user, r.child)]
+    return [r for r in rows if can_access_request(user, r)]
 
 
 @router.get("/supply-requests")
@@ -126,7 +126,7 @@ def create_supply_request(body: SupplyRequestIn, user: User = Depends(require_ro
 
 def _request_or_404(db: Session, request_id: int, user: User) -> SupplyRequest:
     req = db.get(SupplyRequest, request_id)
-    if req is None or not can_access_child(user, req.child):
+    if req is None or not can_access_request(user, req):
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Supply request not found")
     return req
 

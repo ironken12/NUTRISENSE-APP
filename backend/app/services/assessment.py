@@ -271,6 +271,7 @@ _RULE = {
     "haz_below_-3": ("TB/U di bawah -3 SD", "HAZ below -3"), "whz_below_-2": ("BB/TB di bawah -2 SD", "WHZ below -2"),
     "muac_below_12.5": ("LiLA di bawah 12,5 cm", "MUAC below 12.5 cm"), "haz_below_-2": ("TB/U di bawah -2 SD", "HAZ below -2"),
     "2t": ("berat tidak naik 2 kali (2T)", "no weight gain twice (2T)"),
+    "stunted_with_faltering": ("TB/U di bawah -2 SD disertai 2T atau BB/U di bawah -2 SD", "HAZ below -2 with 2T or WAZ below -2"),
 }
 _INPUT = {
     "age_months": ("umur", "age"), "sex_male": ("jenis kelamin", "sex"), "birth_weight_g": ("berat lahir", "birth weight"),
@@ -380,7 +381,9 @@ def run_assessment(db: Session, child: Child, actor: User, lang: str = "id", mea
     pred = model.predict(ctx["features"], ctx["danger_signs"], who_status=ctx["who"], weight_not_gaining=ctx["facts"]["weight_not_gaining"])
     z = {k: ctx["who"][k] for k in ("haz", "waz", "whz", "oedema")}
     tri_z = {**z, "muac_cm": ctx["who"]["muac_cm"]}  # triage also uses the child's MUAC (not stored with the features)
-    tri = triage(pred.risk_level, ctx["danger_signs"], ctx["recent_symptoms"], tri_z, ctx["trend"], ctx["age_now"], ctx["intake"], lang)
+    two_t = ctx["facts"]["weight_not_gaining"] or 0
+    tri = triage(pred.risk_level, ctx["danger_signs"], ctx["recent_symptoms"], tri_z, ctx["trend"], ctx["age_now"], ctx["intake"], lang,
+                 weight_not_gaining=two_t)
 
     assessment = RiskAssessment(
         child_id=child.id,
@@ -440,7 +443,7 @@ def run_assessment(db: Session, child: Child, actor: User, lang: str = "id", mea
                                  urgency=tri["urgency"], status="pending_approval"))
 
     first_step = {code: triage(pred.risk_level, ctx["danger_signs"], ctx["recent_symptoms"], tri_z, ctx["trend"], ctx["age_now"],
-                               ctx["intake"], code)["actions"][0]["text"] for code in ("id", "en")}
+                               ctx["intake"], code, weight_not_gaining=two_t)["actions"][0]["text"] for code in ("id", "en")}
     notify(db, child.caregiver_id, "assessment", {"id": f"Hasil pemeriksaan {child.name}", "en": f"{child.name}'s assessment"},
            first_step, assessment_id=assessment.id, child_id=child.id, risk_level=pred.risk_level, urgency=tri["urgency"])
     audit(db, actor, "risk_assessment", "child", child.id, assessment_id=assessment.id, risk=pred.risk_level,

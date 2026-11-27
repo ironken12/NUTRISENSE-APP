@@ -93,7 +93,7 @@ def item_name(key: str, lang: str) -> str:
 
 
 def supply_request(r: SupplyRequest, lang: str, include_code: bool) -> dict:
-    return {"id": r.id, "child_id": r.child_id, "child_name": r.child.name, "case_id": r.case_id,
+    return {"id": r.id, "child_id": r.child_id, "pregnancy_id": r.pregnancy_id, "child_name": r.recipient_name, "case_id": r.case_id,
             "items": [{**i, "name": item_name(i["item_key"], lang),
                        "needs_doctor": SUPPLY_CATALOG.get(i["item_key"], {}).get("needs_doctor", False)} for i in r.items],
             "urgency": r.urgency, "status": r.status, "fulfillment": r.fulfillment,

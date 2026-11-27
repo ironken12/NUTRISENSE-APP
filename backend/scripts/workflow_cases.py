@@ -55,7 +55,8 @@ def notes(c, h):
     return [n.get("title") or n.get("text") or n.get("body") for n in c.get("/api/notifications", headers=h).json()]
 
 
-def child_case(c, *, label, name, sex, age_m, haz, whz, bw, gains, symptom=None, anc=None, region="Oesapa"):
+def child_case(c, *, label, name, sex, age_m, haz, whz, bw, gains, symptom=None, anc=None, region="Oesapa", family=None,
+               mother=None):
     regions = {r["name"]: r["id"] for r in c.get("/api/regions").json()}
     email = f"wf.{name.split()[1].lower()}@test.id"
     mom = register_mother(c, email, f"Ibu {name.split()[1]}", regions[region])
@@ -71,13 +72,18 @@ def child_case(c, *, label, name, sex, age_m, haz, whz, bw, gains, symptom=None,
         with SessionLocal() as db:
             ch = db.get(Child, cid)
             p = Pregnancy(mother_id=ch.caregiver_id, region_id=ch.region_id, kader_id=ch.kader_id, hpht=birth - timedelta(days=280),
-                          status="delivered", delivered_at=birth, child_id=cid)
+                          status="delivered", delivered_at=birth, child_id=cid, **(mother or {}))
             db.add(p)
             db.flush()
             for n in range(1, anc + 1):
                 db.add(AncVisit(pregnancy_id=p.id, number=min(n, 6), visit_date=p.hpht + timedelta(weeks=6 * n)))
             db.commit()
-        setup.append(f"{anc} antenatal visits on a delivered pregnancy linked to the child (inserted in the database)")
+        setup.append(f"{anc} antenatal visits on a delivered pregnancy linked to the child (inserted in the database)"
+                     + (f", with {mother}" if mother else ""))
+    if family:
+        r = c.patch(f"/api/children/{cid}", headers=mom, json=family)
+        assert r.status_code == 200, r.text
+        setup.append(f"family details through the app: {family}")
     # Monthly weighings: the profile's HAZ/WHZ at the last one; earlier ones on the same z-scores; `gains` = weight change
     # (kg) at each step, None = the growth the z-scores give.
     # `gains` = weight gain (kg) between consecutive monthly weighings; the LAST weighing is exactly on the profile's
@@ -141,7 +147,8 @@ def pregnancy_case(c, *, label):
     det = c.get(f"/api/pregnancies/{pid}", headers=mom).json()
     officer = login(c, "officer@nutrisense.id")
     kader = login(c, "kader.oesapa@nutrisense.id")
-    reqs = [x for x in c.get("/api/supply-requests", headers=officer).json() if x.get("pregnancy_id") == pid]
+    reqs = [{"id": x["id"], "status": x["status"], "items": [i.get("item_key") for i in x.get("items", [])]}
+            for x in c.get("/api/supply-requests", headers=officer).json() if x.get("pregnancy_id") == pid]
     out["cases"].append({
         "case": label, "setup": ["second trimester (20 weeks), 2 ANC visits, MUAC 22.8 cm and Hb 10.4 g/dL entered by the mother"],
         "gestational_weeks": det.get("gestational_weeks"), "risk": det.get("risk"), "flags": det.get("flags"),
@@ -154,7 +161,9 @@ def pregnancy_case(c, *, label):
 
 with TestClient(app) as c:
     child_case(c, label="Low risk (4.9.1)", name="Wf Lowa", sex="female", age_m=18.0, haz=-0.5, whz=0.2, bw=3.1,
-               gains=[0.25, 0.25, 0.25], anc=6)
+               gains=[0.25, 0.25, 0.25], anc=6, mother={"mother_height_cm": 157.0, "education": "sma"},
+               family={"father_height_cm": 168, "mother_age_at_birth": 27, "birth_order": 2, "household_under5": 1,
+                       "household_assets": ["own_house", "electricity", "fridge", "tv", "gas_cooking", "vehicle", "savings"]})
     child_case(c, label="Moderate risk (4.9.2)", name="Wf Moda", sex="male", age_m=10.0, haz=-1.6, whz=-0.5, bw=2.4,
                gains=[0.35, 0.35, 0.0], symptom="Anak diare sudah 3 hari minggu ini")
     child_case(c, label="High risk, child (4.9.3)", name="Wf Higha", sex="female", age_m=26.0, haz=-2.4, whz=-1.8, bw=None,
@@ -175,7 +184,7 @@ with TestClient(app) as c:
             plan = c.get(f"/api/supply-requests/{req['id']}/plan", headers=officer).json()
             r = c.post(f"/api/supply-requests/{req['id']}/approve", headers=officer, json={})
             after = next(x for x in c.get("/api/supply-requests", headers=officer).json() if x["id"] == req["id"])
-            email = {"Wf Lowa": "wf.lowa@test.id", "Wf Moda": "wf.moda@test.id", "Wf Higha": "wf.higha@test.id"}[case["child"]]
+            email = {"Wf Lowa": "wf.lowa@test.id", "Wf Moda": "wf.moda@test.id", "Wf Higha": "wf.higha@test.id"}.get(case.get("child"), "wf.hamil@test.id")
             mom = login(c, email, "Ibu12345")
             mom = login(c, email, "Ibu12345")
             mine = next((x for x in c.get("/api/supply-requests", headers=login(c, email, "Ibu12345")).json() if x["id"] == req["id"]), {})

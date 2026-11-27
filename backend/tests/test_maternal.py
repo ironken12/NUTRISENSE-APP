@@ -245,3 +245,34 @@ def test_open_danger_list_is_scoped(client, auth):
     assert client.get("/api/kader/danger-open", headers=h).status_code == 403
     client.patch(f"/api/pregnancies/{pid}/danger/{row['report_id']}", headers=auth("kader.oesapa@nutrisense.id"), json={"outcome": "advised_home"})
     assert all(x["pregnancy_id"] != pid for x in client.get("/api/kader/danger-open", headers=auth("officer@nutrisense.id")).json())
+
+
+def test_kek_and_anaemia_reserve_food_and_iron_tablets(client, auth):
+    """KEK -> PMT ibu hamil, anaemia -> iron tablets: a supply request for the pregnancy that follows the same officer
+    approval, locker and pickup code as a child's package, visible to the mother and her village's Kader."""
+    regions = {r["name"]: r["id"] for r in client.get("/api/regions").json()}
+    r = client.post("/api/auth/register", json={"email": "bumil.kek@test.id", "password": "Ibu12345", "full_name": "Ibu Kek Test",
+                                                "region_id": regions["Oesapa"], "consent_data_processing": True})
+    mom = {"Authorization": f"Bearer {r.json()['access_token']}"}
+    pid = client.post("/api/pregnancies", headers=mom, json={"gestational_weeks": 20}).json()["id"]
+    r = client.post(f"/api/pregnancies/{pid}/measurements", headers=mom, json={"muac_cm": 22.8, "hb_g_dl": 10.4})
+    assert {f["code"] for f in r.json()["flags"]} == {"kek", "anemia"}
+    mine = [x for x in client.get("/api/supply-requests", headers=mom).json() if x["pregnancy_id"] == pid]
+    assert len(mine) == 1 and mine[0]["child_id"] is None and mine[0]["status"] == "pending_approval"
+    assert {i["item_key"] for i in mine[0]["items"]} == {"pmt_bumil", "ttd"} and mine[0]["child_name"] == "Ibu Kek Test"
+    # A second check while the first request is open does not create another one.
+    client.post(f"/api/pregnancies/{pid}/measurements", headers=mom, json={"hb_g_dl": 10.1})
+    assert len([x for x in client.get("/api/supply-requests", headers=mom).json() if x["pregnancy_id"] == pid]) == 1
+    # The village Kader sees it; the officer approves; the mother gets a locker and a pickup code.
+    assert any(x["pregnancy_id"] == pid for x in client.get("/api/supply-requests", headers=auth("kader.oesapa@nutrisense.id")).json())
+    officer = auth("officer@nutrisense.id")
+    assert client.post(f"/api/supply-requests/{mine[0]['id']}/approve", headers=officer, json={}).status_code == 200
+    ready = next(x for x in client.get("/api/supply-requests", headers=mom).json() if x["id"] == mine[0]["id"])
+    assert ready["status"] in ("ready_for_pickup", "in_transit") and ready["locker"]
+    if ready["status"] == "ready_for_pickup":
+        assert ready["pickup_code"] and ready["qr_payload"]
+    titles = [n.get("title") for n in client.get("/api/notifications", headers=mom).json()]
+    assert any("Paket" in (t or "") for t in titles)
+    # Another mother cannot see it.
+    other = auth("ibu.maria@nutrisense.id")
+    assert not any(x["pregnancy_id"] == pid for x in client.get("/api/supply-requests", headers=other).json())

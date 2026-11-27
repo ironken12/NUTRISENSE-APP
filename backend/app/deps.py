@@ -45,6 +45,20 @@ def can_access_child(user: User, child: Child) -> bool:
     return False
 
 
+def can_access_request(user: User, req) -> bool:
+    """A supply request: the family it is for, or staff covering the child's or the pregnant mother's village."""
+    if req.child is not None:
+        return can_access_child(user, req.child)
+    p = req.pregnancy
+    if user.role in OVERSIGHT:
+        return True
+    if user.role == "caregiver":
+        return p.mother_id == user.id
+    if user.role == "kader":
+        return p.kader_id == user.id or p.region_id in user.coverage()
+    return False
+
+
 def get_child(child_id: int, db: Session, user: User) -> Child:
     child = db.get(Child, child_id)
     if child is None:

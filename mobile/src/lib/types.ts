@@ -332,7 +332,9 @@ export interface LogisticsOption {
 
 export interface SupplyRequest {
   id: number;
-  child_id: number;
+  /** A package for a child, or for a pregnant mother (pregnancy_id set, child_id null). */
+  child_id: number | null;
+  pregnancy_id?: number | null;
   child_name: string;
   case_id: number | null;
   items: Supply[];

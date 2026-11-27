@@ -194,3 +194,20 @@ def test_ntt_recipes_are_quick_and_safe_for_babies():
         if r["min_age"] < 12:
             text = " ".join(r["ingredients"]["id"]).lower()
             assert "garam" not in text and "gula" not in text, r["key"]
+
+
+def test_food_package_only_for_a_growth_problem():
+    """A "medium" from the background risk model alone (normal growth) gets the Kader visit, not a food package."""
+    normal = {"haz": -0.5, "waz": 0.0, "whz": 0.2}
+    t = triage("medium", [], [], normal, {}, 18)
+    assert t["urgency"] == "kader_7d" and t["supplies"] == []
+    assert not any(a["code"] == "pickup_supplies" for a in t["actions"])
+    # The same child with a weighing without enough gain (T), stunting or a falling growth line does get one.
+    assert any(s["item_key"] == "pmt_biscuit" for s in triage("medium", [], [], normal, {}, 18, weight_not_gaining=1)["supplies"])
+    assert any(s["item_key"] == "pmt_biscuit" for s in triage("medium", [], [], {**normal, "haz": -2.2}, {}, 18)["supplies"])
+    assert any(s["item_key"] == "pmt_biscuit" for s in triage("medium", [], [], normal, {"status": "declining"}, 18)["supplies"])
+    # Diarrhoea treatment is given whatever the growth.
+    assert [s["item_key"] for s in triage("medium", [], ["diarrhea"], normal, {}, 18)["supplies"]] == ["ors_zinc"]
+    # High risk always gets a package and a referral to the Puskesmas.
+    t = triage("high", [], [], normal, {}, 18)
+    assert t["supplies"] and t["urgency"] == "doctor_48h" and "Puskesmas" in t["actions"][0]["text"]

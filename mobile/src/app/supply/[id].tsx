@@ -58,7 +58,13 @@ export default function SupplyDetail() {
           {t(`urgency_${req.urgency}`)} {req.locker ? `· ${req.locker.name}` : ''}
           {req.fulfillment ? ` · ${t(`via_${req.fulfillment}`)}` : ''}
         </P>
-        <Button small variant="ghost" title={t('open')} icon="person-outline" onPress={() => router.push(`/child/${req.child_id}`)} />
+        <Button
+          small
+          variant="ghost"
+          title={t('open')}
+          icon="person-outline"
+          onPress={() => router.push(req.pregnancy_id ? `/pregnancy/${req.pregnancy_id}` : `/child/${req.child_id}`)}
+        />
       </Card>
 
       <Card>

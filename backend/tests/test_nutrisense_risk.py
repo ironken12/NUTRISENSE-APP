@@ -144,7 +144,23 @@ def test_guardrails_never_lower(model):
     assert model.predict(SICK).model_level == "high"
     for who in ({"whz": -2.5, "haz": 0.5}, {"haz": -2.5}, {}, {"muac_cm": 12.0}):
         p = model.predict(SICK, who_status=who, weight_not_gaining=2)
-        assert p.risk_level == "high" and p.guardrail is None and not p.needs_review
+        # Already high: a rule may be recorded (stunted + 2T), but the level is never lowered and needs no review.
+        assert p.risk_level == "high" and p.guardrail in (None, "stunted_with_faltering") and not p.needs_review
+
+
+@pytest.mark.parametrize("who,two_t,level,guardrail", [
+    ({"haz": -2.4}, 2, "high", "stunted_with_faltering"),             # stunted + 2T
+    ({"haz": -2.4, "waz": -2.6}, 0, "high", "stunted_with_faltering"),  # stunted + underweight
+    ({"haz": -2.4, "waz": -1.5}, 1, "medium", "stunted_minimum_medium"),  # stunted, one T only: at least medium
+    ({"haz": -1.8, "waz": -2.5}, 2, "medium", "two_t_minimum_medium"),  # not stunted: the rule does not apply
+])
+def test_stunted_with_faltering_is_high(model, who, two_t, level, guardrail):
+    """HAZ < -2 together with 2T or WAZ < -2 (each a Posyandu-to-Puskesmas referral reason) sets "high"."""
+    p = model.predict(LOW, who_status=who, weight_not_gaining=two_t)
+    assert p.model_level == "low" and p.risk_level == level
+    if guardrail != "two_t_minimum_medium":
+        assert p.guardrail == guardrail
+    assert p.needs_review
 
 
 def test_no_confidence_review_rule(model):

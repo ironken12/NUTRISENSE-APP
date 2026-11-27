@@ -90,6 +90,7 @@ def _plausible(name: str) -> tuple[float, float]:
 #   2T (no weight gain at two weighings in a row): Kemenkes 2020 (Buku KIA, KBM); a referral trigger for the Posyandu.
 WHZ_WASTED, WHZ_SEVERE = -2.0, -3.0
 HAZ_STUNTED, HAZ_SEVERE = -2.0, -3.0
+WAZ_UNDERWEIGHT = -2.0  # weight-for-age below -2 SD: underweight (WHO 2006; Permenkes 2/2020)
 MUAC_MODERATE_CM, MUAC_SEVERE_CM = 12.5, 11.5
 MUAC_MIN_AGE_MONTHS = 6.0
 
@@ -151,7 +152,7 @@ class Prediction:
 
 def who_overrides(who: dict, age_months: float | None, weight_not_gaining: float | None) -> tuple[list[str], list[str]]:
     """WHO / Kemenkes rules that set a minimum level: (rules for at least "high", rules for at least "medium")."""
-    haz, whz, muac = who.get("haz"), who.get("whz"), who.get("muac_cm")
+    haz, whz, waz, muac = who.get("haz"), who.get("whz"), who.get("waz"), who.get("muac_cm")
     muac_ok = muac is not None and (age_months is None or age_months >= MUAC_MIN_AGE_MONTHS)
     high, medium = [], []
     if who.get("oedema"):
@@ -162,6 +163,13 @@ def who_overrides(who: dict, age_months: float | None, weight_not_gaining: float
         high.append("muac_below_11.5")
     if haz is not None and haz < HAZ_SEVERE:
         high.append("haz_below_-3")
+    # Stunted AND faltering: HAZ < -2 together with 2T (no weight gain at two weighings) or WAZ < -2 (underweight).
+    # Each is a reason to refer a child from the Posyandu to the Puskesmas (Kemenkes); together they set "high".
+    # To verify (clinical sign-off by the expert panel).
+    stunted_faltering = (haz is not None and HAZ_SEVERE <= haz < HAZ_STUNTED
+                         and ((weight_not_gaining is not None and weight_not_gaining >= 2) or (waz is not None and waz < WAZ_UNDERWEIGHT)))
+    if stunted_faltering:
+        high.append("stunted_with_faltering")
     if whz is not None and WHZ_SEVERE <= whz < WHZ_WASTED:
         medium.append("whz_below_-2")
     if muac_ok and MUAC_SEVERE_CM <= muac < MUAC_MODERATE_CM:
@@ -215,7 +223,8 @@ class RiskModel:
         if danger_signs:
             guardrail, level_idx = "danger_signs_present", 2
         elif high_rules:
-            guardrail, level_idx = "severe_stunting_or_wasting", 2
+            only_faltering = set(high_rules) == {"stunted_with_faltering"}
+            guardrail, level_idx = ("stunted_with_faltering" if only_faltering else "severe_stunting_or_wasting"), 2
         elif medium_rules and level_idx < 1:
             level_idx = 1
             if {"whz_below_-2", "muac_below_12.5"} & set(medium_rules):
