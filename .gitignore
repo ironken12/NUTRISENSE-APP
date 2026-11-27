@@ -28,3 +28,9 @@ backend/backups/
 
 # Web export used by CI and the local e2e runs (npx expo export ... --output-dir ../web-build)
 /web-build/
+
+# Risk model training: IFLS data is licensed by RAND and must not be committed
+*.dta
+ml/data/
+ml/out*/
+ml/**/*.csv
