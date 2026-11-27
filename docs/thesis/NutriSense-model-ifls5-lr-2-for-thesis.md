@@ -52,7 +52,12 @@ Rules:
    app's model performance panel) with the new screenshot from Part B.
 8. Also update, briefly: the abstract (one or two sentences on ifls5-lr-2), the conclusion (main findings and
    limitations), and future work (NTT recalibration, predicting future growth faltering from repeated measurements).
-9. Show me the changes section by section, marking new and changed text, before giving me the full revised chapter.
+9. Part B.10 describes improvements to the app for mothers and to its food advice for NTT (plain wording, local number
+   format, NTT recipes, cheaper food suggestions, a family-details prompt). Add them to the implementation / user
+   interface section of my thesis, with the new screenshots (Figures B6-B9), as design decisions made after reviewing
+   every screen a mother uses. These were not tested with mothers yet: say so, and list a usability test with mothers
+   and Kader in future work.
+10. Show me the changes section by section, marking new and changed text, before giving me the full revised chapter.
    Ask me if anything in my thesis conflicts with Part B instead of guessing.
 
 Citations to use or keep: Strauss, J., Witoelar, F., & Sikoki, B. (2016). The Fifth Wave of the Indonesia Family Life
@@ -248,7 +253,7 @@ Kader cannot visit every child.
 | ARI definition | Cough **and** difficult or fast breathing, matching IFLS5 |
 | Results screen | Shows P(stunting). Every yes/no input is named by the child's value (e.g. "Tinggal di desa" instead of "Wilayah perkotaan ▲", "Belum punya jamban sendiri ber-septic tank" instead of "Jamban sendiri dengan septic tank ▲") |
 | Model performance panel | Both settings, the comparisons with ifls5-lr-1 and the rule, and decimal commas in Indonesian |
-| Tests | 432 backend tests, the ML smoke test, and all browser suites pass |
+| Tests | 435 backend tests, the ML smoke test, and all browser suites pass (48 app steps, 83 features, 37 QA cases) |
 
 ![Figure 4.15c (new). The model performance panel (officer → Dasbor → Detail teknis).](img/1-model-performance-panel-fig-4-15c.png){height=20cm}
 
@@ -257,6 +262,34 @@ Kader cannot visit every child.
 ![Figure B4. The family details screen with the five new questions.](img/3-family-details.png){height=18cm}
 
 ![Figure B5. The caregiver's analysis: P(stunting) and the inputs that weigh most.](img/4-caregiver-analysis.png){height=15cm}
+
+## B.10 Designed for mothers and for food in NTT
+
+Every screen a mother uses (23 in all) was reviewed on a phone-sized screen with a demo mother's account. Most were
+already clear: plain Indonesian, one main action per screen, large picture buttons for symptoms and measuring. The
+review led to the following changes.
+
+| Problem found | Change |
+|---|---|
+| Numbers written the English way ("85.5 cm", "TB/U -1.9") | Indonesian format everywhere a mother looks: "85,5 cm · 11,18 kg", "TB/U -1,9", "1.350" (tested) |
+| Nutrition plan showed figures such as "43.6 / 400 mcg" and the label "Aturan offline" | Each nutrient shows a bar and one plain word: *Cukup*, *Hampir cukup*, *Masih kurang*; exact figures and the label only for health workers |
+| "Cheap" food list included beef and pork | Foods are ranked by nutrients per portion against their price in an NTT market; foods of Rp 6.000 or more a portion are left out. Protein: tempe, chicken, fish, tofu; iron: chicken liver, moringa, tempe, spinach |
+| Recipe list started with plain fruit (quickest first) | Most nourishing first: main meals with an egg, fish or liver (WHO advises an animal-source food every day), then protein, iron, vitamin A and zinc, then time |
+| Few dishes typical of NTT | Six simple NTT dishes for children: *catemak jagung kelor*, *sup ikan kuah kelor*, *nasi jagung* with egg and cassava leaves, *ubi tumbuk telur kelor*, *bubur hati ayam labu kuning*, *bubur labu kacang hijau*. Each takes at most 20 minutes and 3 steps, uses household measures, and adds no salt or sugar for babies (28 recipes in all) |
+| Logging a meal meant scrolling through 32 foods | A "Sering dipakai" row shows the child's six most-used foods first |
+| Family questions hidden under "Data & privasi" | A card on the child's page asks for them until they are answered |
+| "Terlewat" (missed) next to "Belum terlambat" (not too late) | "Masih bisa dikejar" (can still be caught up): bring the child to the Posyandu on a given date |
+
+These changes come from an expert review of the screens, not from testing with mothers. A usability test with mothers
+and Kader in NTT is the next step (future work).
+
+![Figure B6. The nutrition plan as a mother sees it: a bar and a plain word per nutrient, and cheap local foods.](img/5-nutrition-plan.png){height=19cm}
+
+![Figure B7. Recipes, most nourishing first, from everyday NTT foods.](img/6-recipes.png){height=19cm}
+
+![Figure B8. Logging a meal: the child's most-used foods first ("Sering dipakai").](img/7-meal-log.png){height=17cm}
+
+![Figure B9. Growth history in Indonesian number format.](img/8-growth-history.png){height=19cm}
 
 \newpage
 
@@ -274,5 +307,8 @@ Kader cannot visit every child.
 | Parity 3.3 × 10⁻¹⁶ | `node backend/app/ai/riskModel/parity_test.js` |
 | Figures B1, B2 | `ml/results/` (written by `train.py`) |
 | Screenshots | The app on fresh demo data (`e2e/model-panel.shot.mjs` for Figure 4.15c) |
+| B.10: 28 recipes, the six NTT dishes, 20-minute and no-salt/sugar rules | `backend/app/ai/recipes.py`; checked by `tests/test_ai.py` |
+| B.10: cheap-food ranking, Rp 6.000 limit, market prices | `backend/app/ai/nutrition.py` (`_foods_for`), `backend/app/ai/kitchen.py` (`PRICE_IDR`); `tests/test_ai.py` |
+| B.10: recipe order | `backend/app/routers/family.py` (`child_recipes`); `tests/test_api.py` |
 
 Seeds: 42 for the splits and models, 7 for the paired bootstrap.
