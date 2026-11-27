@@ -32,8 +32,9 @@ Rules:
 1. Keep ifls5-lr-1 in the thesis as the original (baseline) model. Present ifls5-lr-2 as an improvement built and
    evaluated after it, in a new subsection of Chapter 4 (e.g. "4.x Model improvement"), placed after the current
    evaluation of ifls5-lr-1. Update the system/implementation sections where the app's model is described.
-2. Use only numbers from Part B. Do not round differently, do not invent numbers, and keep every confidence
-   interval next to its estimate.
+2. For the model's results, use only numbers from Part B. Do not round differently, do not invent numbers, and keep
+   every confidence interval next to its estimate. Figures I cite from the literature (for example odds ratios from
+   published studies) are background, not model results: keep them, with their citations.
 3. Be exact about what is and is not significant:
    - ifls5-lr-2 beats the simple rule (mother < 150 cm or birth weight < 2.5 kg) in both settings (significant).
    - The five new inputs improve the model in both settings (significant).
@@ -54,15 +55,18 @@ Rules:
    limitations), and future work (NTT recalibration, predicting future growth faltering from repeated measurements).
 9. Part B.10 describes improvements to the app for mothers and to its food advice for NTT (plain wording, local number
    format, NTT recipes, cheaper food suggestions, a family-details prompt). Add them to the implementation / user
-   interface section of my thesis, with the new screenshots (Figures B6-B9), as design decisions made after reviewing
-   every screen a mother uses. These were not tested with mothers yet: say so, and list a usability test with mothers
-   and Kader in future work.
+   interface section of my thesis, with the new screenshots (Figures B6-B9). Describe the review exactly as B.10 does:
+   a design review carried out with an AI assistant and checked by me. It is NOT the expert panel review (midwife and
+   nutritionist) in my methods, which has not taken place, and the changes were not tested with mothers: say so, and
+   list the expert panel and a usability test with mothers and Kader in future work. The food prices are rough
+   estimates, not survey data: say so wherever they are used.
 10. Show me the changes section by section, marking new and changed text, before giving me the full revised chapter.
    Ask me if anything in my thesis conflicts with Part B instead of guessing.
 
 Citations to use or keep: Strauss, J., Witoelar, F., & Sikoki, B. (2016). The Fifth Wave of the Indonesia Family Life
 Survey (IFLS5): Overview and Field Report. RAND (WR-1143/1-NIA/NICHD). WHO Multicentre Growth Reference Study Group
-(2006). WHO Child Growth Standards. Kemenkes RI (2020). Permenkes No. 2 Tahun 2020 tentang Standar Antropometri Anak.
+(2006). WHO Child Growth Standards: Length/height-for-age, weight-for-age, weight-for-length, weight-for-height and
+body mass index-for-age: Methods and development. Geneva: World Health Organization. Kemenkes RI (2020). Permenkes No. 2 Tahun 2020 tentang Standar Antropometri Anak.
 Vickers, A. J., & Elkin, E. B. (2006). Decision curve analysis. Medical Decision Making, 26(6), 565-574.
 Pedregosa, F. et al. (2011). Scikit-learn: Machine learning in Python. JMLR, 12, 2825-2830.
 ```
@@ -265,25 +269,27 @@ Kader cannot visit every child.
 
 ## B.10 Designed for mothers and for food in NTT
 
-Every screen a mother uses (23 in all) was reviewed on a phone-sized screen with a demo mother's account. Most were
+Every screen a mother uses (23 in all) was reviewed on a phone-sized screen with a demo mother's account. The review
+was carried out with an AI assistant (Claude) at the author's request and checked by the author; it is not the expert
+panel review (midwife and nutritionist) described in the methods, which has not yet taken place. Most screens were
 already clear: plain Indonesian, one main action per screen, large picture buttons for symptoms and measuring. The
 review led to the following changes.
 
 | Problem found | Change |
 |---|---|
 | Numbers written the English way ("85.5 cm", "TB/U -1.9") | Indonesian format everywhere a mother looks: "85,5 cm · 11,18 kg", "TB/U -1,9", "1.350" (tested) |
-| Nutrition plan showed figures such as "43.6 / 400 mcg" and the label "Aturan offline" | Each nutrient shows a bar and one plain word: *Cukup*, *Hampir cukup*, *Masih kurang*; exact figures and the label only for health workers |
-| "Cheap" food list included beef and pork | Foods are ranked by nutrients per portion against their price in an NTT market; foods of Rp 6.000 or more a portion are left out. Protein: tempe, chicken, fish, tofu; iron: chicken liver, moringa, tempe, spinach |
+| Nutrition plan showed figures such as "43.6 / 400 mcg" and the label "Aturan offline" | Each nutrient shows a bar, the percentage of the daily need and one plain word: *Cukup*, *Hampir cukup*, *Masih kurang*; the exact amounts (mg, mcg) and the label only for health workers |
+| "Cheap" food list included beef and pork | Foods are ranked by nutrients per portion against an estimated price; foods estimated at Rp 6.000 or more a portion are left out. Protein: tempe, chicken, fish, tofu; iron: chicken liver, moringa, tempe, spinach. The prices are rough estimates of one child's portion at NTT village markets and kiosks, rounded to Rp 500, not data from a price survey; the Rp 6.000 limit is a design choice. Both should be checked against local market prices |
 | Recipe list started with plain fruit (quickest first) | Most nourishing first: main meals with an egg, fish or liver (WHO advises an animal-source food every day), then protein, iron, vitamin A and zinc, then time |
 | Few dishes typical of NTT | Six simple NTT dishes for children: *catemak jagung kelor*, *sup ikan kuah kelor*, *nasi jagung* with egg and cassava leaves, *ubi tumbuk telur kelor*, *bubur hati ayam labu kuning*, *bubur labu kacang hijau*. Each takes at most 20 minutes and 3 steps, uses household measures, and adds no salt or sugar for babies (28 recipes in all) |
 | Logging a meal meant scrolling through 32 foods | A "Sering dipakai" row shows the child's six most-used foods first |
 | Family questions hidden under "Data & privasi" | A card on the child's page asks for them until they are answered |
 | "Terlewat" (missed) next to "Belum terlambat" (not too late) | "Masih bisa dikejar" (can still be caught up): bring the child to the Posyandu on a given date |
 
-These changes come from an expert review of the screens, not from testing with mothers. A usability test with mothers
-and Kader in NTT is the next step (future work).
+These changes come from the design review above, not from the expert panel or from testing with mothers. The expert
+panel and a usability test with mothers and Kader in NTT are the next steps (future work).
 
-![Figure B6. The nutrition plan as a mother sees it: a bar and a plain word per nutrient, and cheap local foods.](img/5-nutrition-plan.png){height=19cm}
+![Figure B6. The nutrition plan as a mother sees it: a bar, the percentage of the daily need and a plain word per nutrient, and cheap local foods.](img/5-nutrition-plan.png){height=19cm}
 
 ![Figure B7. Recipes, most nourishing first, from everyday NTT foods.](img/6-recipes.png){height=19cm}
 
@@ -308,7 +314,9 @@ and Kader in NTT is the next step (future work).
 | Figures B1, B2 | `ml/results/` (written by `train.py`) |
 | Screenshots | The app on fresh demo data (`e2e/model-panel.shot.mjs` for Figure 4.15c) |
 | B.10: 28 recipes, the six NTT dishes, 20-minute and no-salt/sugar rules | `backend/app/ai/recipes.py`; checked by `tests/test_ai.py` |
-| B.10: cheap-food ranking, Rp 6.000 limit, market prices | `backend/app/ai/nutrition.py` (`_foods_for`), `backend/app/ai/kitchen.py` (`PRICE_IDR`); `tests/test_ai.py` |
+| B.10: cheap-food ranking, Rp 6.000 limit | `backend/app/ai/nutrition.py` (`_foods_for`); `tests/test_ai.py`. The limit is a design choice |
+| B.10: food prices | `backend/app/ai/kitchen.py` (`PRICE_IDR`): rough estimates for NTT village markets, rounded to Rp 500, written into the app's code; no external source or date |
+| B.10: screen review | Carried out with an AI assistant (Claude) on 27 November 2026 at the author's request; not the expert panel |
 | B.10: recipe order | `backend/app/routers/family.py` (`child_recipes`); `tests/test_api.py` |
 
 Seeds: 42 for the splits and models, 7 for the paired bootstrap.
