@@ -51,7 +51,7 @@ export function familyFrom(c: {
 }
 
 /** Family questions for the risk model. Every answer is optional. */
-export function FamilyQuestions({ value, onChange }: { value: FamilyAnswers; onChange: (v: FamilyAnswers) => void }) {
+export function FamilyQuestions({ value, onChange, heading = true }: { value: FamilyAnswers; onChange: (v: FamilyAnswers) => void; heading?: boolean }) {
   const { t } = useAuth();
   const set = (patch: Partial<FamilyAnswers>) => onChange({ ...value, ...patch });
   const toggle = (k: string) => {
@@ -61,8 +61,8 @@ export function FamilyQuestions({ value, onChange }: { value: FamilyAnswers; onC
   const none = value.assets !== null && value.assets.length === 0;
   return (
     <View>
-      <H2 emoji="👪">{t('familyTitle')}</H2>
-      <P muted style={{ fontSize: 13 }}>{t('familyHint')}</P>
+      {heading && <H2 emoji="👪">{t('familyTitle')}</H2>}
+      <P muted style={{ fontSize: 13, marginBottom: 12 }}>{t('familyHint')}</P>
       <Field label={t('fatherHeight')} value={value.fatherHeight} onChangeText={(v) => set({ fatherHeight: v })} keyboardType="decimal-pad" placeholder={`${t('eg')} 162`} />
       <Field label={t('motherAgeAtBirth')} value={value.motherAge} onChangeText={(v) => set({ motherAge: v })} keyboardType="number-pad" placeholder={`${t('eg')} 26`} />
       <Field label={t('birthOrder')} value={value.birthOrder} onChangeText={(v) => set({ birthOrder: v })} keyboardType="number-pad" placeholder={`${t('eg')} 2`} />

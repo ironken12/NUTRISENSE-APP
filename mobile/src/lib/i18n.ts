@@ -1002,11 +1002,11 @@ const en = {
   projDegree: "Polynomial degree {d} · LOOCV RMSE {r}",
   mAccuracy: "Accuracy",
   mAuc: "AUC (stunting)",
-  mRecallHigh: "Recall: stunted children flagged high",
+  mRecallHigh: "Recall (stunting)",
   mCi: "95% CI {lo}–{hi}",
   mPrecisionHigh: "Precision of high",
   mTestN: "Test children (n)",
-  mThreshold: "High when P(stunting) ≥ {t} (top 30% of training children, what Kader can visit); medium when ≥ {m}; otherwise low.",
+  mThreshold: "High when P(stunting) ≥ {t} (top 30% of training children, what Kader can visit); medium when ≥ {m}; otherwise low. Recall: share of stunted children classed high.",
   mCompared: "Compared on the same children (AUC difference, 95% CI)",
   mVsThesis: "vs thesis model ifls5-lr-1",
   mVsRule: "vs rule: mother < 150 cm or birth weight < 2.5 kg",
@@ -2064,11 +2064,11 @@ const id: Dict = {
   projDegree: "Derajat polinomial {d} · RMSE LOOCV {r}",
   mAccuracy: "Akurasi",
   mAuc: "AUC (stunting)",
-  mRecallHigh: "Recall: anak stunting yang ditandai tinggi",
+  mRecallHigh: "Recall stunting",
   mCi: "IK 95% {lo}–{hi}",
   mPrecisionHigh: "Presisi tingkat tinggi",
   mTestN: "Anak uji (n)",
-  mThreshold: "Tinggi jika P(stunting) ≥ {t} (30% teratas anak data latih, sesuai kapasitas kunjungan Kader); sedang jika ≥ {m}; selain itu rendah.",
+  mThreshold: "Tinggi jika P(stunting) ≥ {t} (30% teratas anak data latih, sesuai kapasitas kunjungan Kader); sedang jika ≥ {m}; selain itu rendah. Recall: bagian anak stunting yang masuk tingkat tinggi.",
   mCompared: "Dibandingkan pada anak yang sama (selisih AUC, IK 95%)",
   mVsThesis: "vs model tesis ifls5-lr-1",
   mVsRule: "vs aturan: tinggi ibu < 150 cm atau berat lahir < 2,5 kg",
@@ -2205,6 +2205,14 @@ export const FEATURE_LABELS: Record<string, { id: string; en: string }> = {
 const FEATURE_VALUE_LABELS: Record<string, { 0: { id: string; en: string }; 1: { id: string; en: string } }> = {
   urban: { 0: { id: 'Tinggal di desa', en: 'Lives in a village' }, 1: { id: 'Tinggal di kota', en: 'Lives in a town or city' } },
   sex_male: { 0: { id: 'Anak perempuan', en: 'Girl' }, 1: { id: 'Anak laki-laki', en: 'Boy' } },
+  low_birth_weight: { 0: { id: 'Berat lahir normal (≥ 2,5 kg)', en: 'Normal birth weight (≥ 2.5 kg)' }, 1: { id: 'Berat lahir rendah (< 2,5 kg)', en: 'Low birth weight (< 2.5 kg)' } },
+  exclusive_bf_6m: { 0: { id: 'Tidak ASI eksklusif 6 bulan', en: 'Not exclusively breastfed for 6 months' }, 1: { id: 'ASI eksklusif 6 bulan', en: 'Exclusively breastfed for 6 months' } },
+  diarrhoea_1m: { 0: { id: 'Tidak diare (4 minggu terakhir)', en: 'No diarrhoea (last 4 weeks)' }, 1: { id: 'Diare (4 minggu terakhir)', en: 'Diarrhoea (last 4 weeks)' } },
+  ari_1m: { 0: { id: 'Tidak batuk dengan sesak (4 minggu terakhir)', en: 'No cough with difficult breathing (last 4 weeks)' }, 1: { id: 'Batuk dengan sesak / ISPA (4 minggu terakhir)', en: 'Cough with difficult breathing / ARI (last 4 weeks)' } },
+  immunisation_complete: { 0: { id: 'Imunisasi dasar belum lengkap', en: 'Basic immunisation incomplete' }, 1: { id: 'Imunisasi dasar lengkap', en: 'Basic immunisation complete' } },
+  mother_anaemia: { 0: { id: 'Ibu tidak anemia saat hamil', en: 'Mother not anaemic in pregnancy' }, 1: { id: 'Ibu anemia saat hamil (Hb < 12)', en: 'Mother anaemic in pregnancy (Hb < 12)' } },
+  improved_water: { 0: { id: 'Sumber air minum belum layak', en: 'Unimproved drinking-water source' }, 1: { id: 'Sumber air minum layak', en: 'Improved drinking-water source' } },
+  improved_sanitation: { 0: { id: 'Belum punya jamban sendiri ber-septic tank', en: 'No own toilet with septic tank' }, 1: { id: 'Jamban sendiri dengan septic tank', en: 'Own toilet with septic tank' } },
 };
 
 /** Label of a model input in an explanation, worded by the child's value where the name alone would mislead. */
@@ -2226,7 +2234,7 @@ export const MODEL_CARD_ID: Record<string, string> = {
     'Memperkirakan risiko terlalu rendah di wilayah yang stuntingnya lebih tinggi (NTB); perlu dikalibrasi ulang untuk NTT',
   'Does not recognise the medium level well': 'Belum mengenali tingkat sedang dengan baik',
   // ifls5-lr-2
-  'Logistic regression with age spline (improved model, ifls5-lr-2)': 'Regresi logistik dengan spline umur (model perbaikan, ifls5-lr-2)',
+  'Logistic regression with age spline (improved model)': 'Regresi logistik dengan spline umur (model perbaikan)',
   'IFLS5 2014-15, 4,794 children aged 0-59 months with a measured height, 13 provinces (no NTT)':
     'IFLS5 2014–15, 4.794 anak umur 0–59 bulan dengan tinggi terukur, 13 provinsi (tanpa NTT)',
   'Modest discrimination: for prioritising Kader visits, not for diagnosis':

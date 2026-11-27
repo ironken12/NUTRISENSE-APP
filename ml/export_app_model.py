@@ -181,7 +181,7 @@ def main():
     model = export_model(pipe, cols, t_high, t_med, len(df), args)
     top = [c for c, _ in sorted(imp.items(), key=lambda t: -t[1])[:5]]
     card = {
-        "model": "Logistic regression with age spline (improved model, ifls5-lr-2)",
+        "model": "Logistic regression with age spline (improved model)",
         "data": f"IFLS5 2014-15, {len(df):,} children aged 0-59 months with a measured height, 13 provinces (no NTT)",
         "target": "Stunting (HAZ < -2, WHO 2006)",
         "excludes": "child height, weight and z-scores, district, regional prevalence and 2T",

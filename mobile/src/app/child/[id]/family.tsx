@@ -38,7 +38,7 @@ export default function FamilyDetails() {
   return (
     <Screen>
       <Card>
-        <FamilyQuestions value={answers} onChange={(v) => { setAnswers(v); setSaved(false); }} />
+        <FamilyQuestions heading={false} value={answers} onChange={(v) => { setAnswers(v); setSaved(false); }} />
       </Card>
       {error && <ErrorBox message={error} />}
       {saved && <P muted>✅ {t('familySaved')}</P>}
