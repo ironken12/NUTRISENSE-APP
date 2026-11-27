@@ -69,7 +69,9 @@ def create_child(body: ChildIn, user: User = Depends(get_current_user), db: Sess
     child = Child(name=body.name, sex=body.sex, birth_date=body.birth_date, caregiver_id=caregiver.id, kader_id=kader_id,
                   region_id=region_id, birth_weight_kg=body.birth_weight_kg, birth_length_cm=body.birth_length_cm,
                   clean_water_access=body.clean_water_access, sanitation_access=body.sanitation_access,
-                  exclusive_breastfeeding=body.exclusive_breastfeeding)
+                  exclusive_breastfeeding=body.exclusive_breastfeeding, father_height_cm=body.father_height_cm,
+                  mother_age_at_birth=body.mother_age_at_birth, birth_order=body.birth_order,
+                  household_under5=body.household_under5, household_assets=body.household_assets)
     db.add(child)
     db.flush()
     audit(db, user, "create_child", "child", child.id)

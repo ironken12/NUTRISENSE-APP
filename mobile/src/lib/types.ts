@@ -106,7 +106,8 @@ export interface Assessment {
   child_id: number;
   risk_level: RiskLevel;
   model_risk_level: RiskLevel;
-  probabilities: Record<RiskLevel, number>;
+  /** ifls5-lr-2: { stunting }. Older assessments (ifls5-lr-1): { low, medium, high }. */
+  probabilities: Partial<Record<RiskLevel | 'stunting', number>>;
   confidence: number;
   needs_review: boolean;
   guardrail: string | null;
@@ -147,6 +148,12 @@ export interface Child {
   exclusive_breastfeeding?: boolean | null;
   clean_water_access: boolean;
   sanitation_access: boolean;
+  /** Family questions for the risk model (null = not asked / unknown). */
+  father_height_cm?: number | null;
+  mother_age_at_birth?: number | null;
+  birth_order?: number | null;
+  household_under5?: number | null;
+  household_assets?: string[] | null;
   weight_gain?: WeightGain;
   latest_measurement: Measurement | null;
   measurement_count: number;

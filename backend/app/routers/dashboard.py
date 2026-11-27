@@ -143,13 +143,14 @@ def model_info(_: User = Depends(require_roles(*STAFF)), db: Session = Depends(g
     run = db.scalar(select(ModelRun).where(ModelRun.name == "stunting_risk", ModelRun.is_active.is_(True)).order_by(ModelRun.id.desc()))
     if run is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No active model")
-    from ..ai.risk_model import FEATURE_NAMES, THRESHOLD_HIGH, model_card
+    from ..ai.risk_model import FEATURE_NAMES, THRESHOLD_HIGH, THRESHOLD_MEDIUM, model_card
 
     card = model_card()
-    # The thesis model card (riskModel/model_card.json): real survey data (IFLS5), but not a clinical validation (see caveats).
+    # The model card (riskModel/model_card.json): real survey data (IFLS5), but not a clinical validation (see caveats).
     return {"id": run.id, "algorithm": run.algorithm, "version": run.version, "n_samples": run.n_samples,
-            "model": card["model"], "data": card["data"], "excludes": card["excludes"], "evaluation": card["evaluation"],
-            "top_inputs": card["top_inputs"], "caveats": card["caveats"], "threshold_high": THRESHOLD_HIGH,
+            "model": card["model"], "data": card["data"], "target": card.get("target"), "excludes": card["excludes"],
+            "evaluation": card["evaluation"], "top_inputs": card["top_inputs"], "caveats": card["caveats"],
+            "compared_with": card.get("compared_with", {}), "threshold_high": THRESHOLD_HIGH, "threshold_medium": THRESHOLD_MEDIUM,
             "registered_at": run.trained_at.isoformat(), "demo": False, "inputs": FEATURE_NAMES,
             "source": {"label": {"id": "Indonesia Family Life Survey gelombang 5 (IFLS5), RAND", "en": "Indonesia Family Life Survey wave 5 (IFLS5), RAND"},
                        "year": 2015}}

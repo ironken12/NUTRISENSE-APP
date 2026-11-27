@@ -15,6 +15,7 @@ from ..ai import kia, nutrition, risk_model, trend
 from ..ai.symptoms import symptom_label
 from ..ai.growth import DAYS_PER_MONTH, age_in_months, classify_haz, classify_whz
 from ..ai.triage import triage
+from ..schemas import HOUSEHOLD_ASSETS
 from ..models import (AncExam, AncVisit, BreastfeedingLog, Case, Child, KiaRecord, MaternalMeasurement, MealLog, NutritionRecommendation,
                       Pregnancy, Region, RiskAssessment, SupplyRequest, SymptomReport, User)
 from . import model_registry
@@ -104,14 +105,20 @@ def model_inputs(db: Session, child: Child, latest, recent_28d: list, given: dic
             ebf = float(child.exclusive_breastfeeding)
 
     # Illness in the last 4 weeks, from symptom reports (unknown if nothing was reported in that window).
+    # ARI as in IFLS5 / the model: cough AND difficult or fast breathing.
     syms = {s for r in recent_28d for s in r.symptoms}
     diarrhoea = float(bool({"diarrhea", "bloody_stool"} & syms)) if recent_28d else None
-    ari = float("fast_breathing" in syms) if recent_28d else None
+    ari = float("cough" in syms and "fast_breathing" in syms) if recent_28d else None
 
     # Basic immunisation (BCG, 3x polio, 3x DPT, measles): unknown under 12 months or with no KIA records.
     imm = None
     if age >= 12 and given:
         imm = float(all(k in given for k in BASIC_IMMUNISATION))
+
+    # Family questions (ifls5-lr-2). Birth order: the linked pregnancy's gravida if there is one.
+    birth_order = float(linked.gravida) if linked is not None and linked.gravida else (
+        None if child.birth_order is None else float(child.birth_order))
+    assets = child.household_assets
 
     region = child.region
     return {
@@ -130,7 +137,12 @@ def model_inputs(db: Session, child: Child, latest, recent_28d: list, given: dic
         "improved_water": float(child.clean_water_access),
         "improved_sanitation": float(child.sanitation_access),
         "urban": None if region is None else float(not region.rural),
-        "district": district_code(region),
+        "district": district_code(region),  # not a model input since ifls5-lr-2 (kept for the record)
+        "father_height_cm": child.father_height_cm,
+        "maternal_age": child.mother_age_at_birth,
+        "birth_order": birth_order,
+        "n_under5": None if child.household_under5 is None else float(child.household_under5),
+        "wealth_index": None if assets is None else float(len(set(assets) & set(HOUSEHOLD_ASSETS))),
     }
 
 
@@ -258,7 +270,10 @@ _INPUT = {
     "low_birth_weight": ("berat lahir", "birth weight"), "mother_height_cm": ("tinggi ibu", "mother's height"),
     "antenatal_contacts": ("jumlah periksa hamil", "antenatal visits"), "mother_education": ("pendidikan ibu", "mother's education"),
     "exclusive_bf_6m": ("ASI eksklusif 6 bulan", "exclusive breastfeeding for 6 months"),
-    "diarrhoea_1m": ("diare 4 minggu terakhir", "diarrhoea in the last 4 weeks"), "ari_1m": ("napas cepat 4 minggu terakhir", "fast breathing in the last 4 weeks"),
+    "diarrhoea_1m": ("diare 4 minggu terakhir", "diarrhoea in the last 4 weeks"), "ari_1m": ("batuk dengan sesak/napas cepat 4 minggu terakhir", "cough with difficult breathing in the last 4 weeks"),
+    "father_height_cm": ("tinggi ayah", "father's height"), "maternal_age": ("umur ibu saat melahirkan", "mother's age at the birth"),
+    "birth_order": ("anak ke berapa", "birth order"), "n_under5": ("jumlah balita di rumah", "children under 5 at home"),
+    "wealth_index": ("daftar aset rumah tangga", "household assets"),
     "immunisation_complete": ("imunisasi dasar", "basic immunisation"), "mother_anaemia": ("Hb ibu saat hamil", "mother's Hb in pregnancy"),
     "improved_water": ("sumber air minum", "drinking-water source"), "improved_sanitation": ("jamban", "toilet"),
     "urban": ("desa/kota", "rural/urban"), "district": ("kabupaten", "district"),

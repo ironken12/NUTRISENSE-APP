@@ -35,7 +35,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from sklearn.compose import ColumnTransformer  # noqa: E402
 from sklearn.ensemble import HistGradientBoostingClassifier  # noqa: E402
-from sklearn.impute import SimpleImputer  # noqa: E402
+from sklearn.impute import MissingIndicator, SimpleImputer  # noqa: E402
 from sklearn.linear_model import LogisticRegressionCV  # noqa: E402
 from sklearn.model_selection import GroupKFold, GroupShuffleSplit  # noqa: E402
 from sklearn.pipeline import Pipeline  # noqa: E402
@@ -43,6 +43,7 @@ from sklearn.preprocessing import SplineTransformer, StandardScaler  # noqa: E40
 
 import common as C  # noqa: E402
 
+MISSING_FLAGS = False  # see logistic(); set by --missing-flags
 FORBIDDEN = {"haz", "waz", "whz", "height_cm", "weight_kg", "child_height_cm", "child_weight_kg", "two_t", "prevalence"}
 
 
@@ -60,9 +61,15 @@ def logistic(df: pd.DataFrame, groups: np.ndarray, seed: int) -> Pipeline:
     age, numeric, binary = feature_lists(df)
     pre = ColumnTransformer([
         ("age", Pipeline([("imp", SimpleImputer(strategy="median")), ("spl", SplineTransformer(n_knots=5, degree=3))]), age),
-        ("num", Pipeline([("imp", SimpleImputer(strategy="median", add_indicator=True)), ("sc", StandardScaler())]), numeric),
-        ("bin", SimpleImputer(strategy="most_frequent", add_indicator=True), binary),
-    ])
+        ("num", Pipeline([("imp", SimpleImputer(strategy="median")), ("sc", StandardScaler())]), numeric),
+        ("bin", SimpleImputer(strategy="most_frequent"), binary),
+    ] + ([
+        # Optional (--missing-flags): 0/1 missing-value flags. Off by default: in the survey a value is missing for a
+        # reason that carries risk information (e.g. the father was not there to be measured); in the app it is missing
+        # because nobody has asked yet. Flags learned from the survey then read "unknown" as "lower risk" in the app.
+        ("num_missing", MissingIndicator(features="missing-only", error_on_new=False), numeric),
+        ("bin_missing", MissingIndicator(features="missing-only", error_on_new=False), binary),
+    ] if MISSING_FLAGS else []))
     folds = list(GroupKFold(n_splits=5).split(df, groups=groups))
     lr = LogisticRegressionCV(Cs=np.logspace(-3, 2, 12), cv=folds, scoring="neg_log_loss", max_iter=5000)
     return Pipeline([("pre", pre), ("lr", lr)])
@@ -165,7 +172,10 @@ def main():
     ap.add_argument("--capacity", type=float, default=0.30, help="share of children Kader can visit (default 0.30)")
     ap.add_argument("--bootstrap", type=int, default=200)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--missing-flags", action="store_true", help="add 0/1 missing-value flags (survey-specific; see logistic())")
     args = ap.parse_args()
+    global MISSING_FLAGS
+    MISSING_FLAGS = args.missing_flags
     args.out.mkdir(parents=True, exist_ok=True)
 
     df = pd.read_csv(args.data, dtype={"district": str, "province": str, "hhid": str})

@@ -29,8 +29,8 @@ def main(argv: list[str]) -> int:
     ensure_columns()
     with SessionLocal() as db:
         if cmd == "train":
-            print("The risk model is the fixed thesis model (app/ai/riskModel). It is not retrained in the app: "
-                  "replace nutrisense_risk_model.json and model_card.json with a new version instead.")
+            print("The risk model is not retrained in the app. Retrain with ml/train.py and export a new version with "
+                  "ml/export_app_model.py (it writes app/ai/riskModel/nutrisense_risk_model.json and model_card.json).")
             return 1
         elif cmd == "metrics":
             from .services.model_registry import get_active

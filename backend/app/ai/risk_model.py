@@ -1,16 +1,18 @@
-"""Stunting risk classifier (classify() in the class diagram): the thesis model, then the clinical guardrails.
+"""Stunting risk classifier (classify() in the class diagram): the risk model, then the clinical guardrails.
 
-1. The model. The multinomial logistic regression from the thesis (Section 4.5.1 / 4.7), trained on IFLS5 2014-15
-   (5,202 children aged 0-59 months, 13 provinces, no NTT). Its coefficients, threshold, imputation values, scaling and
-   district columns live in riskModel/nutrisense_risk_model.json and are scored by nutrisense_risk.predict_risk, a
-   line-by-line port of riskModel/nutrisenseRisk.js (parity with scikit-learn about 1e-16, tests/test_nutrisense_risk.py).
-   Nothing here changes that maths: this module only cleans the inputs, calls it, and explains the result.
-   Decision rule (from the JSON): high if P(high) >= threshold_high, else the more likely of low and medium.
+1. The model: ifls5-lr-2, a logistic regression for stunting (HAZ < -2) with an age spline and missing-value
+   indicators, trained on IFLS5 2014-15 (children aged 0-59 months, 13 provinces, no NTT) with ml/export_app_model.py.
+   It improves on the thesis model ifls5-lr-1 (archived in riskModel/ifls5-lr-1/) with five inputs a Kader can collect:
+   father's height, mother's age at the birth, birth order, children under 5 in the household and an asset checklist.
+   Its coefficients, spline knots, imputation values, scaling and thresholds live in riskModel/nutrisense_risk_model.json
+   and are scored by nutrisense_risk.predict_stunting, a port of riskModel/nutrisenseRisk.js (parity with
+   scikit-learn about 1e-16, tests/test_nutrisense_risk.py). Nothing here changes that maths.
+   Decision rule (from the JSON): high if P(stunting) >= threshold_high (top 30% of the training children, what Kader
+   can visit), medium if >= threshold_medium (top 60%), else low.
 
-   Inputs are the 16 the model was trained on (birth, mother, feeding, illness, immunisation, household, district).
-   The child's height, weight, z-scores, MUAC, regional prevalence and 2T are deliberately NOT inputs: stunting is
-   defined by height-for-age, so a model fed with size would only re-read the answer. Unknown inputs are passed as
-   missing (never 0), and the model imputes them with its own training values.
+   The child's height, weight, z-scores, MUAC, district, regional prevalence and 2T are deliberately NOT inputs:
+   stunting is defined by height-for-age, so a model fed with size would only re-read the answer. Unknown inputs are
+   passed as missing (never 0); the model imputes them and knows they were missing (missing-value indicators).
 
 2. The guardrails. WHO / Kemenkes cut-offs (HAZ, WHZ, MUAC, oedema), 2T and danger signs are applied after the model
    and can only RAISE the level, never lower it.
@@ -18,8 +20,8 @@
 The result is decision support for a health worker, not a diagnosis.
 
 Every prediction ships with:
-  * class probabilities and confidence,
-  * per-input contributions (change in P(high) when that input is treated as unknown),
+  * P(stunting) (stored as probabilities = {"stunting": p}; confidence = p),
+  * per-input contributions (change in P(stunting) when that input is treated as unknown),
   * the guardrail that raised the level, if any,
   * a needs_review flag for the human-in-the-loop step,
   * the inputs that were missing or rejected.
@@ -30,46 +32,54 @@ import itertools
 import math
 from dataclasses import dataclass, field
 
-from .nutrisense_risk import load_model, load_model_card, predict_risk
+from .nutrisense_risk import load_model, load_model_card, predict_stunting
 
 LABELS = ["low", "medium", "high"]
 _MODEL = load_model()
 MODEL_VERSION: str = _MODEL["version"]
-ALGORITHM = "Multinomial logistic regression (thesis model, IFLS5 2014-15); high if P(high) >= threshold"
+ALGORITHM = "Logistic regression with age spline (ifls5-lr-2, IFLS5 2014-15); levels by P(stunting) thresholds"
 THRESHOLD_HIGH: float = _MODEL["threshold_high"]
+THRESHOLD_MEDIUM: float = _MODEL["threshold_medium"]
 
+AGE = _MODEL["age"]["name"]
 NUMERIC = [f["name"] for f in _MODEL["numeric"]]
 BINARY = [f["name"] for f in _MODEL["binary"]]
-DISTRICT = _MODEL["categorical"]["name"]
-FEATURE_NAMES: list[str] = NUMERIC + BINARY + [DISTRICT]
+DISTRICT = "district"  # not an input of ifls5-lr-2; kept for callers that pass it
+FEATURE_NAMES: list[str] = [AGE] + NUMERIC + BINARY
 # Never model inputs: the outcome itself, the child's size, area-level figures and the 2T weighing rule.
 EXCLUDED_INPUTS = {"haz", "waz", "whz", "height_cm", "weight_kg", "haz_velocity", "waz_velocity", "regional_prevalence", "muac_cm",
-                   "weight_not_gaining", "two_t"}
+                   "weight_not_gaining", "two_t", "district"}
 
 # Possible range of each numeric input. A value outside it is a data error: it is rejected (treated as missing) and flagged.
 RANGES: dict[str, tuple[float, float]] = {
     "age_months": (0.0, 60.0),
     "birth_weight_g": (500.0, 6000.0),
     "mother_height_cm": (120.0, 200.0),
+    "father_height_cm": (130.0, 210.0),
     "antenatal_contacts": (0.0, 40.0),
     "mother_education": (0.0, 4.0),  # 0 none, 1 primary, 2 junior high, 3 senior high, 4 tertiary
+    "maternal_age": (12.0, 60.0),  # mother's age at the child's birth, years
+    "birth_order": (1.0, 20.0),  # order among the mother's pregnancies
+    "n_under5": (1.0, 15.0),  # children under 5 living in the household, this child included
+    "wealth_index": (0.0, 10.0),  # asset checklist, 0-10
 }
 RANGES.update({name: (0.0, 1.0) for name in BINARY})
 AGE_CLIP_MONTHS = 61.0  # a check-up a few days after the 5th birthday is clipped to 60 months; beyond that it is an error
 
-# The strongest inputs (model card top inputs that the app can be missing). If they are unknown and plausible values
-# would give a different level, the result needs a human review.
-KEY_INPUTS = ("birth_weight_g", "mother_height_cm", "mother_education")
-_NUM = {f["name"]: f for f in _MODEL["numeric"]}
+# The strongest inputs the app can be missing (model card top inputs, without age). If they are unknown and plausible
+# values would give a different level, the result needs a human review.
+KEY_INPUTS = ("father_height_cm", "mother_height_cm", "mother_education", "wealth_index")
+_SCALE = dict(zip(_MODEL["scaling"]["columns"], zip(_MODEL["scaling"]["mean"], _MODEL["scaling"]["scale"])))
 
 
 def _plausible(name: str) -> tuple[float, float]:
     """Low and high plausible value of a key input: about the 10th and 90th percentile (mean -/+ 1.28 sd) of the
-    training data, or the ends of the scale for education."""
+    training data, within the input's range; the ends of the scale for education."""
     if name == "mother_education":
         return 1.0, 4.0
-    f = _NUM[name]
-    return f["mean"] - 1.28 * f["scale"], f["mean"] + 1.28 * f["scale"]
+    mean, sd = _SCALE[name]
+    lo, hi = RANGES[name]
+    return max(lo, mean - 1.28 * sd), min(hi, mean + 1.28 * sd)
 
 
 # WHO / Kemenkes cut-offs used by the guardrails (applied after the model, never as inputs).
@@ -164,7 +174,7 @@ def who_overrides(who: dict, age_months: float | None, weight_not_gaining: float
 
 
 class RiskModel:
-    """The thesis model (loaded once from riskModel/nutrisense_risk_model.json) plus the guardrails."""
+    """The risk model (loaded once from riskModel/nutrisense_risk_model.json) plus the guardrails."""
 
     def __init__(self, model_run_id: int | None = None):
         self.model = _MODEL
@@ -172,8 +182,8 @@ class RiskModel:
         self.version = MODEL_VERSION
 
     def score(self, clean: dict) -> dict:
-        """predictRisk() on the cleaned inputs only: {proba: {low, medium, high}, level, modelVersion}."""
-        return predict_risk(self.model, {k: clean.get(k) for k in FEATURE_NAMES})
+        """predictRisk() on the cleaned inputs only: {p_stunting, level, modelVersion}."""
+        return predict_stunting(self.model, {k: clean.get(k) for k in FEATURE_NAMES})
 
     def predict(self, features: dict, danger_signs: list[str] | None = None, who_status: dict | None = None,
                 weight_not_gaining: float | None = None) -> Prediction:
@@ -181,18 +191,17 @@ class RiskModel:
         latest measurement) and `weight_not_gaining` (2T) are used only by the guardrails after the model has spoken."""
         clean, missing, rejected = clean_features(features)
         out = self.score(clean)
-        proba = [out["proba"][k] for k in LABELS]
+        p = out["p_stunting"]
         model_idx = LABELS.index(out["level"])
         level_idx = model_idx
 
-        # Explanation: how much each known input moves P(high), i.e. P(high) with the child's value minus P(high) with that
+        # Explanation: how much each known input moves P(stunting), i.e. P with the child's value minus P with that
         # input unknown (the model's own imputation). Unknown inputs are left out: the model filled them in, not the child.
-        p_high = proba[2]
         deltas = []
         for name in FEATURE_NAMES:
             if clean[name] is None:
                 continue
-            d = p_high - self.score({**clean, name: None})["proba"]["high"]
+            d = p - self.score({**clean, name: None})["p_stunting"]
             deltas.append((name, clean[name], d))
         deltas.sort(key=lambda t: -abs(t[2]))
         contributions = [
@@ -216,7 +225,7 @@ class RiskModel:
             else:
                 guardrail = "two_t_minimum_medium"
 
-        confidence = float(proba[model_idx])
+        confidence = float(p)
         # Missing data: a key input that is missing or was rejected makes the result "incomplete" (always shown as a plain
         # reason). It needs a human review when a value was rejected (a data error) or when plausible values for the
         # missing key inputs would give a different level, i.e. the level depends on data we do not have.
@@ -236,7 +245,7 @@ class RiskModel:
         return Prediction(
             risk_level=LABELS[level_idx],
             model_level=LABELS[model_idx],
-            probabilities={LABELS[i]: round(float(p), 4) for i, p in enumerate(proba)},
+            probabilities={"stunting": round(float(p), 4)},
             confidence=round(confidence, 4),
             contributions=contributions,
             guardrail=guardrail,

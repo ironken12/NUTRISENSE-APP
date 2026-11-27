@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 
+import { emptyFamily, familyBody, FamilyQuestions } from '../../components/FamilyQuestions';
 import { Bubble, Button, Card, Chip, ErrorBox, Field, P, Screen, Segmented, Toggle } from '../../components/ui';
 import { api, ApiError, errorText } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
@@ -18,6 +19,7 @@ export default function NewChild() {
   const [caregiverPhone, setCaregiverPhone] = useState('');
   const [water, setWater] = useState(true);
   const [sanitation, setSanitation] = useState(true);
+  const [family, setFamily] = useState(emptyFamily);
   const [regions, setRegions] = useState<Region[]>([]);
   // The user's own village until another is picked (the user can load after the first render on web).
   const [regionPick, setRegionId] = useState<number | null>(null);
@@ -64,6 +66,7 @@ export default function NewChild() {
           birth_weight_kg: birthWeight ? Number(birthWeight.replace(',', '.')) : null,
           clean_water_access: water,
           sanitation_access: sanitation,
+          ...familyBody(family),
           caregiver_email: staff && via === 'email' ? contact : null,
           caregiver_phone: staff && via === 'phone' ? contact : null,
         },
@@ -127,6 +130,9 @@ export default function NewChild() {
         </Card>
         <Toggle label={`🚰 ${t('cleanWater')}`} value={water} onChange={setWater} />
         <Toggle label={`🚽 ${t('sanitation')}`} value={sanitation} onChange={setSanitation} />
+      </Card>
+      <Card>
+        <FamilyQuestions value={family} onChange={setFamily} />
       </Card>
       {error && <ErrorBox message={error} />}
       <Button title={t('save')} onPress={submit} loading={busy} icon="checkmark" />

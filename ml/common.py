@@ -16,7 +16,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import brier_score_loss, roc_auc_score
 
 ROOT = Path(__file__).resolve().parent.parent
-THESIS_MODEL = ROOT / "backend/app/ai/riskModel/nutrisense_risk_model.json"
+THESIS_MODEL = ROOT / "backend/app/ai/riskModel/ifls5-lr-1/nutrisense_risk_model.json"  # the thesis model (archived)
 
 # The thesis model's 16 inputs, with the app's names (see riskModel/README.md).
 NUMERIC = ["age_months", "birth_weight_g", "mother_height_cm", "antenatal_contacts", "mother_education"]
@@ -48,6 +48,20 @@ def thesis_p_high(df: pd.DataFrame, model: dict) -> np.ndarray:
     for row in df[[c for c in cols if c in df.columns]].to_dict("records"):
         child = {k: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in row.items()}
         out.append(port.predict_risk(model, child)["proba"]["high"])
+    return np.asarray(out)
+
+
+ACTIVE_MODEL = ROOT / "backend/app/ai/riskModel/nutrisense_risk_model.json"  # ifls5-lr-2, the model the app runs
+
+
+def active_p_stunting(df: pd.DataFrame, model: dict) -> np.ndarray:
+    """P(stunting) from the active model (ifls5-lr-2), exactly as the app computes it."""
+    port = _load_port()
+    names = [model["age"]["name"]] + [f["name"] for f in model["numeric"]] + [f["name"] for f in model["binary"]]
+    out = []
+    for row in df.reindex(columns=names).to_dict("records"):
+        child = {k: (None if (isinstance(v, float) and math.isnan(v)) else v) for k, v in row.items()}
+        out.append(port.predict_stunting(model, child)["p_stunting"])
     return np.asarray(out)
 
 

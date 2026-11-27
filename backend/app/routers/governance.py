@@ -109,7 +109,7 @@ def mark_all_read(user: User = Depends(get_current_user), db: Session = Depends(
 @router.get("/models")
 def model_runs(_: User = Depends(require_roles("officer", "doctor", "admin")), db: Session = Depends(get_db)):
     return [{"id": r.id, "name": r.name, "algorithm": r.algorithm, "version": r.version, "is_active": r.is_active,
-             "n_samples": r.n_samples, "metrics": {k: r.metrics.get(k) for k in ("accuracy", "f1_macro", "false_negative_rate_high")},
+             "n_samples": r.n_samples, "metrics": {k: r.metrics.get(k) for k in ("accuracy", "auc", "recall_high", "false_negative_rate_high")},
              "trained_at": r.trained_at.isoformat()} for r in db.scalars(select(ModelRun).order_by(ModelRun.id.desc())).all()]
 
 

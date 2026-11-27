@@ -52,7 +52,9 @@ def main():
     ap.add_argument("--holdout-province", default=None)
     ap.add_argument("--reps", type=int, default=1000)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--missing-flags", action="store_true", help="0/1 missing-value flags (see train.logistic)")
     args = ap.parse_args()
+    T.MISSING_FLAGS = args.missing_flags
     dt = {"district": str, "province": str, "hhid": str}
     df = pd.read_csv(args.data, dtype=dt)
     if args.data_base:

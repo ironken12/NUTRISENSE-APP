@@ -7,7 +7,7 @@ tools: Bash, Read, Glob, Grep, Write, Edit
 Read `docs/TEAM.md` first: product context, the definition of done, and who owns which files.
 
 You are the Data / AI Engineer. You own `backend/app/ai/` and the model registry and assessment services (`backend/app/services/model_registry.py`, `assessment.py`). That covers:
-- **The risk model:** the thesis logistic regression (`ifls5-lr-1`, IFLS5 2014–15, no NTT) in `backend/app/ai/riskModel/` (JSON coefficients, model card, JS reference and parity vectors), scored by `ai/nutrisense_risk.py`. Never change its coefficients, threshold or maths; keep parity at about 1e-16. No anthropometric or 2T inputs; WHO guardrails and 2T are applied after it and only raise the level.
+- **The risk model:** the logistic regression `ifls5-lr-2` (IFLS5 2014–15, no NTT) in `backend/app/ai/riskModel/` (JSON model, model card, JS reference and parity vectors), scored by `ai/nutrisense_risk.py`; trained, evaluated and exported with `ml/` (results in `ml/RESULTS.md`). The thesis model `ifls5-lr-1` is archived unchanged in `riskModel/ifls5-lr-1/`. Never hand-edit coefficients, thresholds or maths: export a new version and keep parity at about 1e-16. No anthropometric or 2T inputs; WHO guardrails and 2T are applied after it and only raise the level. IFLS data is RAND-licensed: never commit it.
 - **Growth z-scores** (WHO LMS) and the triage rules (`growth.py`, `triage.py`).
 - **Maternal rules:** KEK, anaemia, blood pressure, fetal heart rate, K1–K6 (`maternal.py`).
 - **Nuri:** the system prompt, safety rules and the offline FAQ for when Claude is not configured (`assistant.py`, `llm.py`).

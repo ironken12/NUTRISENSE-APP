@@ -406,6 +406,7 @@ export default function ChildDetail() {
       <MoreLink label={t('dataPrivacy')} open={more} onPress={() => setMore(!more)} />
       {more && (
         <Card>
+          <ListRow emoji="👪" title={t('familyLink')} onPress={() => router.push(`/child/${id}/family`)} />
           <ListRow emoji="📄" title={t('exportData')} onPress={exportFhir} />
           {isStaff(user) && <ListRow emoji="☁️" title={t('satusehatSync')} onPress={syncSatusehat} />}
           {mom && <ListRow emoji="⚙️" title={t('privacySettings')} onPress={() => router.push('/privacy')} />}

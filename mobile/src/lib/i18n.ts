@@ -106,6 +106,26 @@ const en = {
   birthWeight: 'Birth weight (kg, optional)',
   cleanWater: 'Drinking water from a pipe, pump well, rainwater or bottled water',
   sanitation: 'Own toilet with a septic tank',
+  familyTitle: 'Family details',
+  familyHint: 'These help the AI estimate risk before any growth problem shows. Leave blank what the family does not know.',
+  fatherHeight: "Father's height (cm)",
+  motherAgeAtBirth: "Mother's age when this child was born (years)",
+  birthOrder: 'Which pregnancy was this child? (1 = first)',
+  householdUnder5: 'Children under 5 living at home, this child included',
+  assetsTitle: 'The household has (tap all that apply)',
+  assetsNone: 'None of these',
+  asset_own_house: 'Own house',
+  asset_electricity: 'Electricity',
+  asset_fridge: 'Fridge',
+  asset_tv: 'TV',
+  asset_gas_cooking: 'Cooks with gas or electricity',
+  asset_vehicle: 'Vehicle (motorbike, car, boat, bicycle)',
+  asset_savings: 'Savings or deposits',
+  asset_jewellery: 'Gold jewellery',
+  asset_land: 'Land (other than farm land)',
+  asset_other_house: 'Another house or building',
+  familySaved: 'Family details saved. They are used at the next measurement.',
+  familyLink: 'Family details',
   caregiverEmail: 'Caregiver email (their NutriSense account)',
   risk: 'Risk',
   risk_low: 'Low risk',
@@ -981,12 +1001,16 @@ const en = {
   pfNotes: "Notes",
   projDegree: "Polynomial degree {d} · LOOCV RMSE {r}",
   mAccuracy: "Accuracy",
-  mAuc: "AUC (high risk)",
-  mRecallHigh: "Recall, high risk",
+  mAuc: "AUC (stunting)",
+  mRecallHigh: "Recall: stunted children flagged high",
   mCi: "95% CI {lo}–{hi}",
-  mPrecisionHigh: "Precision, high risk",
+  mPrecisionHigh: "Precision of high",
   mTestN: "Test children (n)",
-  mThreshold: "High when P(high) ≥ {t}; otherwise the more likely of low and medium.",
+  mThreshold: "High when P(stunting) ≥ {t} (top 30% of training children, what Kader can visit); medium when ≥ {m}; otherwise low.",
+  mCompared: "Compared on the same children (AUC difference, 95% CI)",
+  mVsThesis: "vs thesis model ifls5-lr-1",
+  mVsRule: "vs rule: mother < 150 cm or birth weight < 2.5 kg",
+  pStunting: "P(stunting)",
   mCaveats: "Limitations",
   satusehatSync: "Send to SATUSEHAT (FHIR)",
   fhirReady: "Data ready to share: {n} records (FHIR format)",
@@ -1144,6 +1168,26 @@ const id: Dict = {
   birthWeight: 'Berat lahir (kg, opsional)',
   cleanWater: 'Air minum dari ledeng/PAM, sumur pompa, air hujan, atau air kemasan',
   sanitation: 'Punya jamban sendiri dengan septic tank',
+  familyTitle: 'Data keluarga',
+  familyHint: 'Membantu AI memperkirakan risiko sebelum ada masalah pertumbuhan. Kosongkan yang tidak diketahui keluarga.',
+  fatherHeight: 'Tinggi badan ayah (cm)',
+  motherAgeAtBirth: 'Umur ibu saat anak ini lahir (tahun)',
+  birthOrder: 'Anak ini dari kehamilan ke berapa? (1 = pertama)',
+  householdUnder5: 'Jumlah balita di rumah, termasuk anak ini',
+  assetsTitle: 'Rumah tangga memiliki (pilih semua yang sesuai)',
+  assetsNone: 'Tidak ada satu pun',
+  asset_own_house: 'Rumah milik sendiri',
+  asset_electricity: 'Listrik',
+  asset_fridge: 'Kulkas',
+  asset_tv: 'TV',
+  asset_gas_cooking: 'Masak pakai gas atau listrik',
+  asset_vehicle: 'Kendaraan (motor, mobil, perahu, sepeda)',
+  asset_savings: 'Tabungan atau deposito',
+  asset_jewellery: 'Perhiasan emas',
+  asset_land: 'Tanah (selain sawah/kebun)',
+  asset_other_house: 'Rumah atau bangunan lain',
+  familySaved: 'Data keluarga tersimpan. Dipakai pada pengukuran berikutnya.',
+  familyLink: 'Data keluarga',
   caregiverEmail: 'Email orang tua (akun NutriSense)',
   risk: 'Risiko',
   risk_low: 'Risiko rendah',
@@ -2019,12 +2063,16 @@ const id: Dict = {
   pfNotes: "Catatan",
   projDegree: "Derajat polinomial {d} · RMSE LOOCV {r}",
   mAccuracy: "Akurasi",
-  mAuc: "AUC (risiko tinggi)",
-  mRecallHigh: "Recall risiko tinggi",
+  mAuc: "AUC (stunting)",
+  mRecallHigh: "Recall: anak stunting yang ditandai tinggi",
   mCi: "IK 95% {lo}–{hi}",
-  mPrecisionHigh: "Presisi risiko tinggi",
+  mPrecisionHigh: "Presisi tingkat tinggi",
   mTestN: "Anak uji (n)",
-  mThreshold: "Tinggi jika P(tinggi) ≥ {t}; selain itu yang lebih mungkin antara rendah dan sedang.",
+  mThreshold: "Tinggi jika P(stunting) ≥ {t} (30% teratas anak data latih, sesuai kapasitas kunjungan Kader); sedang jika ≥ {m}; selain itu rendah.",
+  mCompared: "Dibandingkan pada anak yang sama (selisih AUC, IK 95%)",
+  mVsThesis: "vs model tesis ifls5-lr-1",
+  mVsRule: "vs aturan: tinggi ibu < 150 cm atau berat lahir < 2,5 kg",
+  pStunting: "P(stunting)",
   mCaveats: "Keterbatasan",
   satusehatSync: "Kirim ke SATUSEHAT (FHIR)",
   fhirReady: "Data siap dibagikan: {n} catatan (format FHIR)",
@@ -2132,14 +2180,19 @@ export const FEATURE_LABELS: Record<string, { id: string; en: string }> = {
   clean_water: { id: 'Air bersih', en: 'Clean water' },
   sanitation: { id: 'Sanitasi', en: 'Sanitation' },
   rural: { id: 'Wilayah pedesaan', en: 'Rural area' },
-  // Inputs of the thesis model (ifls5-lr-1).
+  // Inputs of the risk model (ifls5-lr-2; the first 16 were also in the thesis model ifls5-lr-1).
+  father_height_cm: { id: 'Tinggi ayah', en: "Father's height" },
+  maternal_age: { id: 'Umur ibu saat melahirkan', en: "Mother's age at the birth" },
+  birth_order: { id: 'Anak ke berapa', en: 'Birth order' },
+  n_under5: { id: 'Jumlah balita di rumah', en: 'Children under 5 at home' },
+  wealth_index: { id: 'Aset rumah tangga', en: 'Household assets' },
   birth_weight_g: { id: 'Berat lahir', en: 'Birth weight' },
   mother_height_cm: { id: 'Tinggi ibu', en: "Mother's height" },
   antenatal_contacts: { id: 'Jumlah periksa hamil (ANC)', en: 'Antenatal visits' },
   mother_education: { id: 'Pendidikan ibu', en: "Mother's education" },
   exclusive_bf_6m: { id: 'ASI eksklusif 6 bulan', en: 'Exclusive breastfeeding for 6 months' },
   diarrhoea_1m: { id: 'Diare (4 minggu terakhir)', en: 'Diarrhoea (last 4 weeks)' },
-  ari_1m: { id: 'Napas cepat / ISPA (4 minggu terakhir)', en: 'Fast breathing / ARI (last 4 weeks)' },
+  ari_1m: { id: 'Batuk dengan sesak / ISPA (4 minggu terakhir)', en: 'Cough with difficult breathing / ARI (last 4 weeks)' },
   immunisation_complete: { id: 'Imunisasi dasar lengkap', en: 'Basic immunisation complete' },
   mother_anaemia: { id: 'Ibu anemia saat hamil (Hb < 12)', en: 'Mother anaemic in pregnancy (Hb < 12)' },
   improved_water: { id: 'Sumber air minum layak', en: 'Improved drinking-water source' },
@@ -2147,6 +2200,19 @@ export const FEATURE_LABELS: Record<string, { id: string; en: string }> = {
   urban: { id: 'Wilayah perkotaan', en: 'Urban area' },
   district: { id: 'Kabupaten/kota', en: 'District' },
 };
+
+/** Names of 0/1 inputs that read wrongly without their value ("Urban area ▲" for a child who lives in a village). */
+const FEATURE_VALUE_LABELS: Record<string, { 0: { id: string; en: string }; 1: { id: string; en: string } }> = {
+  urban: { 0: { id: 'Tinggal di desa', en: 'Lives in a village' }, 1: { id: 'Tinggal di kota', en: 'Lives in a town or city' } },
+  sex_male: { 0: { id: 'Anak perempuan', en: 'Girl' }, 1: { id: 'Anak laki-laki', en: 'Boy' } },
+};
+
+/** Label of a model input in an explanation, worded by the child's value where the name alone would mislead. */
+export function featureLabel(key: string, value: number | string | null | undefined, lang: Lang): string {
+  const byValue = FEATURE_VALUE_LABELS[key];
+  if (byValue && (value === 0 || value === 1)) return byValue[value][lang];
+  return FEATURE_LABELS[key]?.[lang] ?? key;
+}
 
 /** Indonesian wording of the fixed English strings in riskModel/model_card.json (shown verbatim in English). */
 export const MODEL_CARD_ID: Record<string, string> = {
@@ -2159,6 +2225,14 @@ export const MODEL_CARD_ID: Record<string, string> = {
   'Under-predicts risk where stunting is more common (NTB); recalibrate for NTT':
     'Memperkirakan risiko terlalu rendah di wilayah yang stuntingnya lebih tinggi (NTB); perlu dikalibrasi ulang untuk NTT',
   'Does not recognise the medium level well': 'Belum mengenali tingkat sedang dengan baik',
+  // ifls5-lr-2
+  'Logistic regression with age spline (improved model, ifls5-lr-2)': 'Regresi logistik dengan spline umur (model perbaikan, ifls5-lr-2)',
+  'IFLS5 2014-15, 4,794 children aged 0-59 months with a measured height, 13 provinces (no NTT)':
+    'IFLS5 2014–15, 4.794 anak umur 0–59 bulan dengan tinggi terukur, 13 provinsi (tanpa NTT)',
+  'Modest discrimination: for prioritising Kader visits, not for diagnosis':
+    'Daya beda sedang: untuk memprioritaskan kunjungan Kader, bukan untuk diagnosis',
+  'Trained on 2014-15 data without NTT; immunisation known for only 22% of children (vaccination card)':
+    'Dilatih dengan data 2014–15 tanpa NTT; status imunisasi hanya diketahui pada 22% anak (kartu imunisasi)',
 };
 
 export const NUTRIENT_LABELS: Record<string, { id: string; en: string; unit: string }> = {

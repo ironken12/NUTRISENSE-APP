@@ -1,44 +1,105 @@
 {
- "model": "Logistic regression (main model, Section 4.5.1)",
- "data": "IFLS5 2014-15, 5,202 children aged 0-59 months, 13 provinces (no NTT)",
- "excludes": "child height, weight and z-scores",
+ "model": "Logistic regression with age spline (improved model, ifls5-lr-2)",
+ "data": "IFLS5 2014-15, 4,794 children aged 0-59 months with a measured height, 13 provinces (no NTT)",
+ "target": "Stunting (HAZ < -2, WHO 2006)",
+ "excludes": "child height, weight and z-scores, district, regional prevalence and 2T",
+ "decision_rule": "high if P(stunting) >= threshold_high (top 30% of the training children), medium if >= threshold_medium (top 60%), else low",
  "evaluation": {
   "Random 80/20 split": {
-   "n_test": 1043.0,
-   "accuracy": 0.435,
-   "f1_macro": 0.367,
-   "recall_high": 0.786,
-   "recall_high_ci_low": 0.724,
-   "recall_high_ci_high": 0.835,
-   "precision_high": 0.411,
-   "auc_high": 0.681,
-   "brier": 0.204,
-   "slope": 1.184
+   "n_test": 975,
+   "prevalence_stunting": 0.35,
+   "auc": 0.665,
+   "auc_ci_low": 0.624,
+   "auc_ci_high": 0.707,
+   "flagged_high": 0.316,
+   "recall_high": 0.439,
+   "recall_high_ci_low": 0.379,
+   "recall_high_ci_high": 0.499,
+   "precision_high": 0.486,
+   "accuracy": 0.641,
+   "brier": 0.212,
+   "calibration_intercept": -0.013,
+   "slope": 0.81,
+   "compared_with": {
+    "ifls5-lr-1": {
+     "auc_difference": 0.023,
+     "ci_low": -0.003,
+     "ci_high": 0.048,
+     "share_not_better": 0.044
+    },
+    "rule": {
+     "auc_difference": 0.085,
+     "ci_low": 0.052,
+     "ci_high": 0.12,
+     "share_not_better": 0.0
+    }
+   }
   },
   "NTB hold-out": {
-   "n_test": 479.0,
-   "accuracy": 0.51,
-   "f1_macro": 0.385,
-   "recall_high": 0.821,
-   "recall_high_ci_low": 0.757,
-   "recall_high_ci_high": 0.882,
-   "precision_high": 0.547,
-   "auc_high": 0.678,
-   "brier": 0.243,
-   "slope": 1.256
+   "n_test": 456,
+   "prevalence_stunting": 0.491,
+   "auc": 0.727,
+   "auc_ci_low": 0.679,
+   "auc_ci_high": 0.769,
+   "flagged_high": 0.391,
+   "recall_high": 0.544,
+   "recall_high_ci_low": 0.483,
+   "recall_high_ci_high": 0.608,
+   "precision_high": 0.683,
+   "accuracy": 0.652,
+   "brier": 0.222,
+   "calibration_intercept": 0.583,
+   "slope": 1.087,
+   "compared_with": {
+    "ifls5-lr-1": {
+     "auc_difference": 0.052,
+     "ci_low": 0.022,
+     "ci_high": 0.082,
+     "share_not_better": 0.002
+    },
+    "rule": {
+     "auc_difference": 0.152,
+     "ci_low": 0.113,
+     "ci_high": 0.195,
+     "share_not_better": 0.0
+    }
+   }
   }
  },
  "top_inputs": [
+  "age_months",
+  "father_height_cm",
   "mother_height_cm",
-  "birth_weight_g",
-  "district",
   "mother_education",
-  "immunisation_complete"
+  "wealth_index"
  ],
+ "input_importance_auc_drop": {
+  "age_months": 0.0233,
+  "father_height_cm": 0.02,
+  "mother_height_cm": 0.0159,
+  "mother_education": 0.0041,
+  "wealth_index": 0.0038,
+  "birth_order": 0.0032,
+  "urban": 0.0016,
+  "n_under5": 0.0014,
+  "improved_sanitation": 0.001,
+  "maternal_age": 0.0008,
+  "mother_anaemia": 0.0007,
+  "improved_water": 0.0001,
+  "exclusive_bf_6m": -0.0001,
+  "ari_1m": -0.0003,
+  "antenatal_contacts": -0.0004,
+  "birth_weight_g": -0.0007,
+  "sex_male": -0.0014,
+  "low_birth_weight": -0.0018,
+  "immunisation_complete": -0.0019,
+  "diarrhoea_1m": -0.0029
+ },
+ "comparisons_note": "AUC difference of this model minus ifls5-lr-1 (the thesis model) and minus the rule 'mother < 150 cm or birth weight < 2.5 kg', on the same test children (paired household bootstrap). ifls5-lr-1 was trained on the random split of IFLS5, so it may have seen some test children: its side is optimistic.",
  "caveats": [
   "Not a clinical validation",
-  "Recall target 0.80 not met on the lower bound of the 95% CI",
+  "Modest discrimination: for prioritising Kader visits, not for diagnosis",
   "Under-predicts risk where stunting is more common (NTB); recalibrate for NTT",
-  "Does not recognise the medium level well"
+  "Trained on 2014-15 data without NTT; immunisation known for only 22% of children (vaccination card)"
  ]
 }

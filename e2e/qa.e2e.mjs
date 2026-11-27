@@ -214,10 +214,10 @@ const main = async () => {
 
   // ---- E. Officer and doctor ----
   const O = await open('officer@nutrisense.id', 'Demo1234!', 'officer');
-  await tc('E1', 'Officer', 'Dashboard: thesis model card (IFLS5, both settings, limitations, no Data demo); every figure card has a source line', async () => {
+  await tc('E1', 'Officer', 'Dashboard: model card ifls5-lr-2 (IFLS5, both settings, comparisons, limitations, no Data demo); every figure card has a source line', async () => {
     await O.go('/dashboard'); await O.page.waitForTimeout(2500);
     await O.text('Detail teknis', false).click(); await O.page.waitForTimeout(800);
-    for (const s of ['Pembagian acak 80/20', 'Uji terpisah NTB (hold-out)', 'Keterbatasan', 'Bukan validasi klinis', 'IFLS5'])
+    for (const s of ['Pembagian acak 80/20', 'Uji terpisah NTB (hold-out)', 'Keterbatasan', 'Bukan validasi klinis', 'IFLS5', 'ifls5-lr-2', 'vs aturan'])
       expect(await O.has(s), s);
     expect(!(await O.has('Data demo', true)), 'model panel still says Data demo'); const n = await O.page.getByText(/^Sumber:/).count(); expect(n >= 8, `only ${n} source lines`);
     return `${n} source lines`;

@@ -82,7 +82,7 @@ def risk_assessment(child: Child, a: RiskAssessment) -> dict:
                 "outcome": {"text": "Stunting / growth faltering"},
                 "qualitativeRisk": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/risk-probability",
                                                 "code": _RISK_CODE[a.reviewed_level or a.risk_level]}]},
-                "probabilityDecimal": a.probabilities.get(a.risk_level),
+                "probabilityDecimal": a.probabilities.get("stunting", a.probabilities.get(a.risk_level)),
             }],
             "note": [{"text": r["text"]} for r in a.reasons[:5]],
         },

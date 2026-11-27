@@ -2,7 +2,7 @@
 from datetime import date
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints
+from pydantic import AfterValidator, BaseModel, EmailStr, Field, StringConstraints, field_validator
 
 # Passwords people commonly pick first; refused even though they meet the length rule.
 WEAK_PASSWORDS = {"12345678", "password", "87654321", "qwertyui", "11111111", "00000000"}
@@ -69,7 +69,30 @@ class PasswordChangeIn(BaseModel):
     new_password: NewPassword
 
 
-class ChildIn(BaseModel):
+# Asset checklist for the risk model (ifls5-lr-2): the same ten items as the IFLS5 asset score it was trained on.
+HOUSEHOLD_ASSETS = ("own_house", "electricity", "fridge", "tv", "gas_cooking", "vehicle", "savings", "jewellery", "land", "other_house")
+
+
+class FamilyFields(BaseModel):
+    """Family questions asked at registration. Leave a field out (None) when the family does not know."""
+    father_height_cm: float | None = Field(default=None, ge=130, le=210)
+    mother_age_at_birth: float | None = Field(default=None, ge=12, le=60)
+    birth_order: int | None = Field(default=None, ge=1, le=20)
+    household_under5: int | None = Field(default=None, ge=1, le=15)
+    household_assets: list[str] | None = Field(default=None, max_length=len(HOUSEHOLD_ASSETS))
+
+    @field_validator("household_assets")
+    @classmethod
+    def _assets(cls, v):
+        if v is None:
+            return v
+        bad = [a for a in v if a not in HOUSEHOLD_ASSETS]
+        if bad:
+            raise ValueError(f"unknown assets: {bad}")
+        return sorted(set(v))
+
+
+class ChildIn(FamilyFields):
     name: Name
     sex: str = Field(pattern="^(male|female)$")
     birth_date: date
@@ -83,7 +106,7 @@ class ChildIn(BaseModel):
     exclusive_breastfeeding: bool | None = None
 
 
-class ChildUpdateIn(BaseModel):
+class ChildUpdateIn(FamilyFields):
     name: Name | None = None
     birth_gestational_weeks: float | None = Field(default=None, ge=22, le=44)
     region_id: int | None = None

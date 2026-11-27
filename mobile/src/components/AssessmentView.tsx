@@ -4,7 +4,7 @@ import { Linking, View } from 'react-native';
 
 import { useAuth } from '../lib/auth';
 import { formatDate } from '../lib/fun';
-import { FEATURE_LABELS, label } from '../lib/i18n';
+import { featureLabel } from '../lib/i18n';
 import { motherStatus, txt, zWords } from '../lib/status';
 import type { Assessment, Facility } from '../lib/types';
 import { colors, statusColor, StatusKey } from '../theme';
@@ -156,18 +156,22 @@ export function TechnicalDetails({ a }: { a: Assessment }) {
   const { t, lang } = useAuth();
   const f = a.features as Record<string, number | null>;
   const maxC = Math.max(...a.explanation.map((e) => Math.abs(e.contribution)), 0.01);
+  const stunting = a.probabilities.stunting;
   return (
     <View style={{ marginTop: 8 }}>
       <Text style={{ color: colors.muted, fontSize: 13 }}>
-        HAZ {fmtZ(f.haz)} · WAZ {fmtZ(f.waz)} · WHZ {fmtZ(f.whz)} · {t('confidence')} {Math.round(a.confidence * 100)}%
+        HAZ {fmtZ(f.haz)} · WAZ {fmtZ(f.waz)} · WHZ {fmtZ(f.whz)}
+        {stunting === undefined ? ` · ${t('confidence')} ${Math.round(a.confidence * 100)}%` : ''}
       </Text>
       <Text style={{ color: colors.muted, fontSize: 13, marginBottom: 6 }}>
-        P(low/med/high) = {Math.round(a.probabilities.low * 100)} / {Math.round(a.probabilities.medium * 100)} / {Math.round(a.probabilities.high * 100)}%
+        {stunting !== undefined
+          ? `${t('pStunting')} ${Math.round(stunting * 100)}%`
+          : `P(low/med/high) = ${Math.round((a.probabilities.low ?? 0) * 100)} / ${Math.round((a.probabilities.medium ?? 0) * 100)} / ${Math.round((a.probabilities.high ?? 0) * 100)}%`}
       </Text>
       {a.explanation.map((e) => (
         <View key={e.feature} style={{ marginTop: 8 }}>
           <Row style={{ justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 14 }}>{label(FEATURE_LABELS, e.feature, lang)}</Text>
+            <Text style={{ fontSize: 14 }}>{featureLabel(e.feature, e.value, lang)}</Text>
             <Text style={{ color: e.contribution > 0 ? colors.danger : colors.ok, fontWeight: '800', fontSize: 14 }}>
               {e.contribution > 0 ? '▲' : '▼'} {Math.abs(e.contribution * 100).toFixed(0)}
             </Text>
@@ -204,7 +208,13 @@ function StaffResult({ a, compact, hideEmergency }: Props) {
         </Row>
         <Text style={{ fontWeight: '800', marginTop: 6 }}>{t(`urgency_${a.triage.urgency}`)}</Text>
         <Text style={{ color: colors.muted, fontSize: 13 }}>
-          {byRule ? t('setByRule') : kader ? '' : `${t('confidence')} ${Math.round(a.confidence * 100)}%`}
+          {byRule
+            ? t('setByRule')
+            : kader
+              ? ''
+              : a.probabilities.stunting !== undefined
+                ? `${t('pStunting')} ${Math.round(a.probabilities.stunting * 100)}%`
+                : `${t('confidence')} ${Math.round(a.confidence * 100)}%`}
           {a.needs_review && !a.reviewed_at ? `${byRule || !kader ? ' · ' : ''}⏳ ${t('needsReview')}` : ''}
         </Text>
       </Card>

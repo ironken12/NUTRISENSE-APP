@@ -59,7 +59,9 @@ def child(c: Child, latest_assessment: RiskAssessment | None = None) -> dict:
             "region_id": c.region_id, "region": region(c.region), "birth_weight_kg": c.birth_weight_kg,
             "birth_length_cm": c.birth_length_cm, "clean_water_access": c.clean_water_access,
             "sanitation_access": c.sanitation_access, "exclusive_breastfeeding": c.exclusive_breastfeeding,
-            "birth_gestational_weeks": c.birth_gestational_weeks, "weight_gain": weight_gain(c),
+            "birth_gestational_weeks": c.birth_gestational_weeks, "father_height_cm": c.father_height_cm,
+            "mother_age_at_birth": c.mother_age_at_birth, "birth_order": c.birth_order, "household_under5": c.household_under5,
+            "household_assets": c.household_assets, "weight_gain": weight_gain(c),
             "latest_measurement": measurement(last) if last else None, "measurement_count": len(c.measurements),
             "latest_assessment": assessment(latest_assessment)}
 

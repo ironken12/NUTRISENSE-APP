@@ -114,7 +114,7 @@ Personas used throughout this document and the demo:
 |---|---|---|
 | Real smart-locker hardware and couriers | Hardware is outside the thesis scope | Lockers, stock and deliveries are simulated; officers can fast-forward a delivery |
 | Live SATUSEHAT submission | Needs Ministry onboarding | The FHIR bundle is generated and validated; the submission is simulated and logged |
-| A model trained on NTT children | No consented NTT cohort yet | The risk model is the thesis model trained on IFLS5 2014–15 (no NTT); its model card lists the limitations, including recalibration for NTT |
+| A model trained on NTT children | No consented NTT cohort yet | The risk model (`ifls5-lr-2`) is trained on IFLS5 2014–15 (no NTT); its model card lists the limitations, including recalibration for NTT (`ml/recalibrate.py`) |
 | Push notifications and SMS | Not built yet | In-app notifications (planned: [PRODUCT.md backlog #4](PRODUCT.md#6-backlog-top-10-ordered-by-impact)) |
 | Local languages (Uab Meto, Rote, Sabu, Helong) | Need translators and validation | Bahasa Indonesia and English, with text-to-speech ("Dengar") |
 
@@ -154,7 +154,7 @@ Personas used throughout this document and the demo:
 
 | ID | Requirement | Priority | Status | Evidence |
 |---|---|---|---|---|
-| RSK-01 | Every measurement produces a risk assessment (low, medium, high) from the thesis logistic regression (`ifls5-lr-1`, IFLS5 2014–15), using 16 inputs known **before** the child's size (birth, mother, ANC, feeding, illness, immunisation, household, district). Height, weight, z-scores, regional prevalence and 2T are **not** inputs; unknown inputs are passed as missing, never 0. Output matches the reference `nutrisenseRisk.js` to about 1e-16. | M | Built | `ai/riskModel/`, `ai/nutrisense_risk.py`, `ai/risk_model.py`, `services/assessment.py` |
+| RSK-01 | Every measurement produces a risk assessment (low, medium, high) from the logistic regression `ifls5-lr-2` (IFLS5 2014–15; improves on the thesis model `ifls5-lr-1`), using 20 inputs known **before** the child's size (birth, mother, ANC, feeding, illness, immunisation, household, and five family questions: father's height, mother's age at the birth, birth order, children under 5, assets). Height, weight, z-scores, district, regional prevalence and 2T are **not** inputs; unknown inputs are passed as missing, never 0. Output matches the reference `nutrisenseRisk.js` to about 1e-16. | M | Built | `ai/riskModel/`, `ai/nutrisense_risk.py`, `ai/risk_model.py`, `services/assessment.py`, `ml/` |
 | RSK-02 | Safety guardrails can **raise** the level after the model but never lower it: WHO cut-offs (HAZ, WHZ, MUAC), oedema, 2T and IMCI danger signs. | M | Built | `ai/risk_model.py` |
 | RSK-03 | Each result explains itself: the factors that pushed the risk up or down, and human-readable reasons. | M | Built | `RiskAssessment.explanation`, `.reasons` |
 | RSK-04 | A result is marked for human review when a guardrail raised the model's level, an input was rejected as impossible, or missing key inputs could change the level. (The earlier confidence < 0.6 rule was dropped: with three classes and a recall-oriented threshold, most results fall below it.) | M | Built | `ai/risk_model.py`, `GET /api/reviews/pending` |

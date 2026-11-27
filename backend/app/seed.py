@@ -381,6 +381,30 @@ def seed_if_empty(db: Session) -> bool:
     _trajectory(db, c8, kaders[oesapa.id], -0.3, -0.5, -0.6, -2.4, 4, random.Random(29))
     _kia(db, c8, random.Random(31))
     stories.append((c8, martha))
+
+    # Family questions of the risk model (ifls5-lr-2): set for the storyline children, NTT-like values for the cohort
+    # (from their own generator, so the rest of the demo data stays the same). A few are left unknown, as in the field.
+    def family(c, father_cm, mother_age, order, under5, assets):
+        c.father_height_cm, c.mother_age_at_birth, c.birth_order, c.household_under5 = father_cm, mother_age, order, under5
+        c.household_assets = assets
+
+    town = ["own_house", "electricity", "fridge", "tv", "gas_cooking", "vehicle", "savings"]
+    family(c1, 168.0, 27.0, 2, 1, town)  # Adel: low
+    family(c2, 168.0, 24.0, 1, 1, town)  # Budi: same family
+    family(c3, 157.0, 31.0, 3, 2, ["own_house", "electricity"])  # Yosef: high
+    family(c4, 157.0, 34.0, 4, 2, ["own_house", "electricity"])
+    family(c5, 160.0, 29.0, 2, 3, ["own_house", "electricity", "tv"])  # Kevin: emergency
+    family(c6, 166.0, 30.0, 3, 3, ["own_house", "electricity", "tv", "vehicle", "gas_cooking", "fridge"])  # Grace: low
+    family(c7, 166.0, 31.0, 4, 3, ["own_house", "electricity", "tv", "vehicle", "gas_cooking", "fridge"])  # Kristo: low
+    family(c8, 170.0, 28.0, 1, 1, town + ["jewellery"])  # Selfi: model low, raised by WHZ
+    fam = random.Random(37)
+    items = ["own_house", "electricity", "fridge", "tv", "gas_cooking", "vehicle", "savings", "jewellery", "land", "other_house"]
+    for c, _ in cohort:
+        rural = c.region is not None and c.region.rural
+        k = max(0, min(10, round(fam.gauss(3.5 if rural else 5.5, 1.6))))
+        family(c, None if fam.random() < 0.25 else round(fam.gauss(159.0, 5.5), 1),  # a quarter of fathers not measured
+               round(fam.gauss(28.0, 6.0)), fam.choice([1, 1, 2, 2, 3, 4, 5]), fam.choice([1, 1, 2, 2, 3]),
+               None if fam.random() < 0.1 else items[:2] + fam.sample(items[2:], max(0, k - 2)))
     db.commit()
 
     model_registry.get_active(db)

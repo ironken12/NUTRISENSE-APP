@@ -100,6 +100,12 @@ class Child(Base):
     sanitation_access: Mapped[bool] = mapped_column(Boolean, default=True)
     exclusive_breastfeeding: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     birth_gestational_weeks: Mapped[float | None] = mapped_column(Float, nullable=True)  # < 37 = premature
+    # Family questions asked at registration (risk model ifls5-lr-2). None = not asked / unknown.
+    father_height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mother_age_at_birth: Mapped[float | None] = mapped_column(Float, nullable=True)  # years
+    birth_order: Mapped[int | None] = mapped_column(Integer, nullable=True)  # 1 = first pregnancy
+    household_under5: Mapped[int | None] = mapped_column(Integer, nullable=True)  # children under 5 at home, this one included
+    household_assets: Mapped[list | None] = mapped_column(JSON, nullable=True)  # keys from assessment.HOUSEHOLD_ASSETS
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
     caregiver: Mapped[User] = relationship(foreign_keys=[caregiver_id])

@@ -78,18 +78,26 @@ interface ProjectionData {
   projection: { year: number; value: number }[];
 }
 
+interface Comparison {
+  auc_difference: number;
+  ci_low: number;
+  ci_high: number;
+}
+
 interface ModelEvaluation {
   n_test: number;
   accuracy: number;
-  f1_macro: number;
   recall_high: number;
   recall_high_ci_low: number;
   recall_high_ci_high: number;
   precision_high: number;
-  auc_high: number;
+  auc: number;
+  auc_ci_low: number;
+  auc_ci_high: number;
+  compared_with?: Record<string, Comparison>;
 }
 
-/** The thesis model card (backend app/ai/riskModel/model_card.json). */
+/** The model card (backend app/ai/riskModel/model_card.json, written by ml/export_app_model.py). */
 interface ModelInfo {
   algorithm: string;
   version: string;
@@ -101,6 +109,7 @@ interface ModelInfo {
   top_inputs: string[];
   caveats: string[];
   threshold_high: number;
+  threshold_medium: number;
   demo: boolean;
   source: SourceRef;
   registered_at: string;
@@ -186,7 +195,9 @@ export default function Dashboard() {
   // The model's class names (low/medium/high) shown in the reader's language.
   // Model card strings are English; Indonesian wording where we have it.
   const cardText = (s: string) => (lang === 'id' ? (MODEL_CARD_ID[s] ?? s) : s);
-  const pct = (v: number) => `${(v * 100).toFixed(1).replace('.', lang === 'id' ? ',' : '.')}%`;
+  const dec = (v: number, digits: number) => v.toFixed(digits).replace('.', lang === 'id' ? ',' : '.');
+  const pct = (v: number) => `${dec(v * 100, 1)}%`;
+  const signed = (v: number) => `${v >= 0 ? '+' : '−'}${dec(Math.abs(v), 3)}`;
   const summary = useApi<Summary>('/api/dashboard/summary');
   const heat = useApi<HeatRow[]>('/api/dashboard/heatmap');
   const [series, setSeries] = useState<'ntt' | 'indonesia'>('ntt');
@@ -386,7 +397,10 @@ export default function Dashboard() {
             <View key={setting} style={{ marginTop: 10 }}>
               <Text style={{ fontWeight: '700', color: colors.text }}>{cardText(setting)}</Text>
               <Row style={{ flexWrap: 'wrap', marginTop: 4 }}>
-                <Stat label={t('mAuc')} value={ev.auc_high.toFixed(3)} />
+                <Stat
+                  label={`${t('mAuc')} · ${t('mCi').replace('{lo}', dec(ev.auc_ci_low, 3)).replace('{hi}', dec(ev.auc_ci_high, 3))}`}
+                  value={dec(ev.auc, 3)}
+                />
                 <Stat
                   label={`${t('mRecallHigh')} · ${t('mCi').replace('{lo}', pct(ev.recall_high_ci_low)).replace('{hi}', pct(ev.recall_high_ci_high))}`}
                   value={pct(ev.recall_high)}
@@ -395,9 +409,29 @@ export default function Dashboard() {
                 <Stat label={t('mAccuracy')} value={pct(ev.accuracy)} />
                 <Stat label={t('mTestN')} value={Math.round(ev.n_test).toLocaleString(lang === 'id' ? 'id-ID' : 'en-US')} />
               </Row>
+              {ev.compared_with && (
+                <View style={{ marginTop: 2 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12.5 }}>{t('mCompared')}</Text>
+                  {(
+                    [
+                      ['ifls5-lr-1', t('mVsThesis')],
+                      ['rule', t('mVsRule')],
+                    ] as const
+                  ).map(([key, name]) => {
+                    const c = ev.compared_with?.[key];
+                    return c ? (
+                      <Text key={key} style={{ color: colors.text, fontSize: 13 }}>
+                        {name}: <Text style={{ fontWeight: '800' }}>{signed(c.auc_difference)}</Text> ({signed(c.ci_low)} – {signed(c.ci_high)})
+                      </Text>
+                    ) : null;
+                  })}
+                </View>
+              )}
             </View>
           ))}
-          <P muted style={{ fontSize: 12 }}>{t('mThreshold').replace('{t}', model.data.threshold_high.toFixed(2))}</P>
+          <P muted style={{ fontSize: 12 }}>
+            {t('mThreshold').replace('{t}', dec(model.data.threshold_high, 2)).replace('{m}', dec(model.data.threshold_medium, 2))}
+          </P>
           <Text style={{ fontWeight: '700', marginTop: 12, color: colors.text }}>{t('modelInputs')}</Text>
           {model.data.top_inputs.map((k, i) => (
             <Text key={k} style={{ color: colors.text, fontSize: 13 }}>

@@ -205,12 +205,12 @@ def test_dashboard_endpoints(client, auth):
     proj = client.get("/api/dashboard/projection?series=ntt", headers=officer).json()
     assert proj["selected_degree"] in (1, 2, 3) and proj["projection"]
     model = client.get("/api/dashboard/model", headers=officer).json()
-    # The thesis model card (IFLS5), both evaluation settings, with its caveats; not labelled as demo data.
-    assert model["version"] == "ifls5-lr-1" and model["n_samples"] == 5202 and model["demo"] is False
+    # The model card (ifls5-lr-2, IFLS5), both evaluation settings, with its caveats; not labelled as demo data.
+    assert model["version"] == "ifls5-lr-2" and model["n_samples"] == 4794 and model["demo"] is False
     assert set(model["evaluation"]) == {"Random 80/20 split", "NTB hold-out"}
     for ev in model["evaluation"].values():
-        assert {"auc_high", "recall_high", "recall_high_ci_low", "recall_high_ci_high", "precision_high", "accuracy", "n_test"} <= set(ev)
-    assert model["top_inputs"][0] == "mother_height_cm" and "Not a clinical validation" in model["caveats"]
+        assert {"auc", "auc_ci_low", "auc_ci_high", "recall_high", "recall_high_ci_low", "recall_high_ci_high", "precision_high", "accuracy", "n_test"} <= set(ev)
+    assert model["top_inputs"][0] == "age_months" and "father_height_cm" in model["top_inputs"] and "Not a clinical validation" in model["caveats"]
     assert "IFLS5" in model["source"]["label"]["en"] and model["source"]["year"]
     assert not {"haz", "waz", "whz", "height_cm", "weight_kg", "regional_prevalence", "weight_not_gaining"} & set(model["inputs"])
     assert client.post("/api/models/retrain", headers=auth("admin@nutrisense.id")).status_code == 409

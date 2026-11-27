@@ -22,7 +22,7 @@ def make(n: int, ntt: bool, seed: int) -> pd.DataFrame:
     if ntt:
         districts = ["5301", "5302", "5303", "5304", "5314", "5371"]
     else:
-        cols = json.loads((ROOT / "backend/app/ai/riskModel/nutrisense_risk_model.json").read_text())["categorical"]["columns"]
+        cols = json.loads((ROOT / "backend/app/ai/riskModel/ifls5-lr-1/nutrisense_risk_model.json").read_text())["categorical"]["columns"]
         districts = [c for c in cols if c.isdigit()][:30] + ["5201", "5202", "5271"]  # incl. NTB (52)
     hh = rng.integers(0, n // 2, n)
     d = rng.choice(districts, n)

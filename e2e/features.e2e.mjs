@@ -469,9 +469,12 @@ const O = await open('officer@nutrisense.id'); current = O;
 await feature('G1', 'Petugas', 'Dasbor wilayah', 'Area dashboard', 'Buka Dasbor', 'Angka anak, stunting, kasus, sumber data; indikator ibu hamil', async () => {
   await O.go('/dashboard'); for (const s of ['Prioritas kunjungan', 'Stunting']) expect(await O.has(s), s); expect(await O.page.getByText(/^Sumber:/).count() >= 3, 'sources');
 });
-await feature('G2', 'Petugas', 'Kinerja model AI (Detail teknis)', 'AI model performance', 'Buka Detail teknis', 'Model tesis (IFLS5): AUC, recall + IK 95%, presisi, akurasi, n untuk 2 setelan, masukan utama, keterbatasan', async () => {
+await feature('G2', 'Petugas', 'Kinerja model AI (Detail teknis)', 'AI model performance', 'Buka Detail teknis', 'Model ifls5-lr-2 (IFLS5): AUC + IK 95%, recall + IK 95%, presisi, akurasi, n untuk 2 setelan, perbandingan dengan model tesis dan aturan sederhana, masukan utama, keterbatasan; angka desimal pakai koma', async () => {
   await O.text('Detail teknis', false).click(); await O.wait(800);
-  for (const s of ['Regresi logistik', 'Pembagian acak 80/20', 'Uji terpisah NTB (hold-out)', 'AUC (risiko tinggi)', 'IK 95% 72,4%–83,5%', 'Presisi risiko tinggi', 'Tinggi ibu', 'Keterbatasan', 'Bukan validasi klinis']) expect(await O.has(s), s);
+  for (const s of ['Regresi logistik dengan spline umur', 'ifls5-lr-2', 'Pembagian acak 80/20', 'Uji terpisah NTB (hold-out)', 'AUC (stunting)', 'Presisi tingkat tinggi', 'vs model tesis ifls5-lr-1', 'Tinggi ayah', 'Keterbatasan', 'Bukan validasi klinis']) expect(await O.has(s), s);
+  const auc = (await call('GET', '/api/dashboard/model', null, officer)).json.evaluation['Random 80/20 split'].auc;
+  expect(await O.has(auc.toFixed(3).replace('.', ',')), `AUC ${auc} not shown with a decimal comma`);
+  expect(!(await O.has(auc.toFixed(3), true)), 'AUC shown with a decimal point in Indonesian');
   expect(!(await O.has('Data demo', true)), 'model panel still says Data demo');
 });
 await feature('G3', 'Petugas', 'Proyeksi dan peta wilayah', 'Projection and area map', 'Muat proyeksi, peta dan daftar ditandai', 'Data tersedia tanpa galat', async () => {
