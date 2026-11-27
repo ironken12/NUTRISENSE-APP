@@ -5,7 +5,8 @@
    "case": "Low risk (4.9.1)",
    "child": "Wf Lowa",
    "setup": [
-    "6 antenatal visits on a delivered pregnancy linked to the child (inserted in the database)"
+    "6 antenatal visits on a delivered pregnancy linked to the child (inserted in the database), with {'mother_height_cm': 157.0, 'education': 'sma'}",
+    "family details through the app: {'father_height_cm': 168, 'mother_age_at_birth': 27, 'birth_order': 2, 'household_under5': 1, 'household_assets': ['own_house', 'electricity', 'fridge', 'tv', 'gas_cooking', 'vehicle', 'savings']}"
    ],
    "measurement": {
     "age_months": 18.0,
@@ -21,19 +22,12 @@
     "N"
    ],
    "not_gaining": 0,
-   "model_level": "medium",
-   "final_level": "medium",
-   "p_stunting": 0.3121,
+   "model_level": "low",
+   "final_level": "low",
+   "p_stunting": 0.2005,
    "guardrail": null,
-   "needs_review": true,
+   "needs_review": false,
    "missing_inputs": [
-    "mother_height_cm",
-    "mother_education",
-    "maternal_age",
-    "birth_order",
-    "father_height_cm",
-    "n_under5",
-    "wealth_index",
     "exclusive_bf_6m",
     "diarrhoea_1m",
     "ari_1m",
@@ -41,99 +35,36 @@
     "mother_anaemia"
    ],
    "triage": {
-    "urgency": "kader_7d",
+    "urgency": "routine",
     "actions": [
-     "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.",
-     "Paket gizi akan disiapkan di loker N.E.X.U.S. terdekat. Anda akan menerima kode pengambilan.",
+     "Lanjutkan penimbangan dan pengukuran rutin setiap bulan di Posyandu.",
      "Ikuti rencana gizi mingguan di aplikasi."
     ]
    },
    "reasons": [
-    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Hasil ini perlu dicek petugas."
+    "Pertumbuhan dalam batas normal"
    ],
-   "cases": [
-    {
-     "id": 44,
-     "status": "open",
-     "priority": "medium",
-     "urgency": "kader_7d",
-     "assigned_to_id": 4
-    }
-   ],
-   "supply_requests": [
-    {
-     "id": 43,
-     "status": "pending_approval",
-     "items": [
-      "pmt_biscuit",
-      "mnp_taburia",
-      "kelor_powder"
-     ],
-     "pickup_code": null,
-     "locker": null,
-     "route": null
-    }
-   ],
+   "cases": [],
+   "supply_requests": [],
    "notifications": {
     "mother": [
      "Hasil pemeriksaan Wf Lowa"
     ],
     "kader": [
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Natalia Seran",
      "Risiko tinggi: Natalia Sabu",
      "Perlu kunjungan: Petrus Lay",
      "Perlu kunjungan: Lusia Bani",
-     "Risiko tinggi: Junita Tallo"
+     "Risiko tinggi: Junita Tallo",
+     "Perlu kunjungan: Vinsensius Lay"
     ],
     "officer": [
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Elias Seran",
      "Risiko tinggi: Beni Bani",
      "Perlu kunjungan: Stefanus Ndun",
      "Risiko tinggi: Natalia Seran",
-     "Risiko tinggi: Natalia Sabu"
-    ]
-   },
-   "after_approval_mother_view": {
-    "pickup_code": "239421",
-    "has_qr": true,
-    "locker": "Loker Posyandu Oesapa",
-    "expires_at": "2026-11-30T08:36:57.188020+00:00"
-   },
-   "after_approval": {
-    "approve_http": 200,
-    "plan_options": [
-     null,
-     null,
-     null,
-     null
-    ],
-    "status": "ready_for_pickup",
-    "pickup_code": null,
-    "locker_id": null,
-    "fields": [
-     "approved_at",
-     "case_id",
-     "child_id",
-     "child_name",
-     "created_at",
-     "decision",
-     "expires_at",
-     "fulfillment",
-     "id",
-     "items",
-     "locker",
-     "picked_up_at",
-     "pickup_code",
-     "qr_payload",
-     "ready_at",
-     "status",
-     "urgency"
-    ],
-    "mother_notifications": [
-     "Paket gizi siap diambil",
-     "Hasil pemeriksaan Wf Lowa"
+     "Risiko tinggi: Natalia Sabu",
+     "Risiko tinggi: Beni Manu"
     ]
    }
   },
@@ -193,7 +124,7 @@
    ],
    "cases": [
     {
-     "id": 45,
+     "id": 44,
      "status": "open",
      "priority": "medium",
      "urgency": "kader_7d",
@@ -202,7 +133,7 @@
    ],
    "supply_requests": [
     {
-     "id": 44,
+     "id": 41,
      "status": "pending_approval",
      "items": [
       "ors_zinc",
@@ -221,26 +152,26 @@
     ],
     "kader": [
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Natalia Seran",
      "Risiko tinggi: Natalia Sabu",
      "Perlu kunjungan: Petrus Lay",
-     "Perlu kunjungan: Lusia Bani"
+     "Perlu kunjungan: Lusia Bani",
+     "Risiko tinggi: Junita Tallo"
     ],
     "officer": [
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Elias Seran",
      "Risiko tinggi: Beni Bani",
      "Perlu kunjungan: Stefanus Ndun",
-     "Risiko tinggi: Natalia Seran"
+     "Risiko tinggi: Natalia Seran",
+     "Risiko tinggi: Natalia Sabu"
     ]
    },
    "after_approval_mother_view": {
-    "pickup_code": "354204",
+    "pickup_code": "663232",
     "has_qr": true,
     "locker": "Loker Posyandu Oesapa",
-    "expires_at": "2026-11-30T08:36:57.403796+00:00"
+    "expires_at": "2026-11-30T16:36:17.001334+00:00"
    },
    "after_approval": {
     "approve_http": 200,
@@ -267,6 +198,7 @@
      "locker",
      "picked_up_at",
      "pickup_code",
+     "pregnancy_id",
      "qr_payload",
      "ready_at",
      "status",
@@ -296,10 +228,10 @@
     "T"
    ],
    "not_gaining": 2,
-   "model_level": "medium",
-   "final_level": "medium",
+   "model_level": "high",
+   "final_level": "high",
    "p_stunting": 0.3224,
-   "guardrail": null,
+   "guardrail": "stunted_with_faltering",
    "needs_review": true,
    "missing_inputs": [
     "birth_weight_g",
@@ -319,31 +251,32 @@
     "mother_anaemia"
    ],
    "triage": {
-    "urgency": "kader_7d",
+    "urgency": "doctor_48h",
     "actions": [
-     "Kader akan melakukan kunjungan rumah dalam 7 hari untuk pengukuran ulang dan konseling gizi.",
+     "Rujuk ke Puskesmas: periksakan anak ke dokter dalam 48 jam. Kader akan membantu rujukan.",
      "Paket gizi akan disiapkan di loker N.E.X.U.S. terdekat. Anda akan menerima kode pengambilan.",
      "Ikuti rencana gizi mingguan di aplikasi."
     ]
    },
    "reasons": [
+    "Tingkat risiko dinaikkan sesuai batas WHO/Kemenkes: TB/U di bawah -2 SD disertai 2T atau BB/U di bawah -2 SD, TB/U di bawah -2 SD, berat tidak naik 2 kali (2T)",
     "Tinggi badan menurut umur di bawah -2 SD / stunting (TB/U -2,4)",
     "Berat badan menurut umur rendah (BB/U -2,7)",
     "Berat tidak naik 2 kali berturut-turut (2T)",
-    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Hasil ini perlu dicek petugas."
+    "Data belum lengkap (tinggi ayah, tinggi ibu, pendidikan ibu, daftar aset rumah tangga). Lengkapi agar hasil lebih tepat."
    ],
    "cases": [
     {
-     "id": 46,
+     "id": 45,
      "status": "open",
-     "priority": "medium",
-     "urgency": "kader_7d",
+     "priority": "high",
+     "urgency": "doctor_48h",
      "assigned_to_id": 4
     }
    ],
    "supply_requests": [
     {
-     "id": 45,
+     "id": 42,
      "status": "pending_approval",
      "items": [
       "pmt_biscuit",
@@ -359,27 +292,27 @@
      "Hasil pemeriksaan Wf Higha"
     ],
     "kader": [
-     "Perlu kunjungan: Wf Higha",
+     "Risiko tinggi: Wf Higha",
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Natalia Seran",
      "Risiko tinggi: Natalia Sabu",
-     "Perlu kunjungan: Petrus Lay"
+     "Perlu kunjungan: Petrus Lay",
+     "Perlu kunjungan: Lusia Bani"
     ],
     "officer": [
-     "Perlu kunjungan: Wf Higha",
+     "Risiko tinggi: Wf Higha",
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Elias Seran",
      "Risiko tinggi: Beni Bani",
-     "Perlu kunjungan: Stefanus Ndun"
+     "Perlu kunjungan: Stefanus Ndun",
+     "Risiko tinggi: Natalia Seran"
     ]
    },
    "after_approval_mother_view": {
-    "pickup_code": "494783",
+    "pickup_code": "045103",
     "has_qr": true,
     "locker": "Loker Posyandu Oesapa",
-    "expires_at": "2026-11-30T08:36:57.617678+00:00"
+    "expires_at": "2026-11-30T16:36:17.211782+00:00"
    },
    "after_approval": {
     "approve_http": 200,
@@ -406,6 +339,7 @@
      "locker",
      "picked_up_at",
      "pickup_code",
+     "pregnancy_id",
      "qr_payload",
      "ready_at",
      "status",
@@ -468,21 +402,30 @@
     ],
     "created": true
    },
-   "supply_requests": [],
+   "supply_requests": [
+    {
+     "id": 43,
+     "status": "pending_approval",
+     "items": [
+      "pmt_bumil",
+      "ttd"
+     ]
+    }
+   ],
    "notifications": {
     "mother": [],
     "kader": [
      "Ibu hamil perlu perhatian",
-     "Perlu kunjungan: Wf Higha",
+     "Risiko tinggi: Wf Higha",
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Natalia Seran",
-     "Risiko tinggi: Natalia Sabu"
+     "Risiko tinggi: Natalia Sabu",
+     "Perlu kunjungan: Petrus Lay"
     ],
     "officer": [
-     "Perlu kunjungan: Wf Higha",
+     "Permintaan paket ibu hamil",
+     "Risiko tinggi: Wf Higha",
      "Perlu kunjungan: Wf Moda",
-     "Perlu kunjungan: Wf Lowa",
      "Risiko tinggi: Elias Seran",
      "Risiko tinggi: Beni Bani",
      "Perlu kunjungan: Stefanus Ndun"
@@ -494,6 +437,47 @@
     "distance_km": 1.2,
     "transport_difficulty": 1,
     "ambulance": "119"
+   },
+   "after_approval_mother_view": {
+    "pickup_code": "842808",
+    "has_qr": true,
+    "locker": "Loker Posyandu Oesapa",
+    "expires_at": "2026-11-30T16:36:17.413821+00:00"
+   },
+   "after_approval": {
+    "approve_http": 200,
+    "plan_options": [
+     null,
+     null,
+     null,
+     null
+    ],
+    "status": "ready_for_pickup",
+    "pickup_code": null,
+    "locker_id": null,
+    "fields": [
+     "approved_at",
+     "case_id",
+     "child_id",
+     "child_name",
+     "created_at",
+     "decision",
+     "expires_at",
+     "fulfillment",
+     "id",
+     "items",
+     "locker",
+     "picked_up_at",
+     "pickup_code",
+     "pregnancy_id",
+     "qr_payload",
+     "ready_at",
+     "status",
+     "urgency"
+    ],
+    "mother_notifications": [
+     "Paket gizi siap diambil"
+    ]
    },
    "pregnancy_detail_keys": [
     "anc",

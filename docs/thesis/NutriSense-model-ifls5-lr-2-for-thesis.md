@@ -60,7 +60,15 @@ Rules:
    nutritionist) in my methods, which has not taken place, and the changes were not tested with mothers: say so, and
    list the expert panel and a usability test with mothers and Kader in future work. The food prices are rough
    estimates, not survey data: say so wherever they are used.
-10. Show me the changes section by section, marking new and changed text, before giving me the full revised chapter.
+10. The attached "Table 4.15 Workflow Test Cases: revised table and observed results" replaces Table 4.15 and gives
+   the results for Section 4.9. Use the revised table (family details in the low-risk profile; no drone; Kader and
+   puskesmas contact instead of a midwife; officer approval before locker reservation) and fill the Observed column
+   from it. Report both runs honestly: the first run reached the expected level in 2 of 4 cases; three changes were
+   then made to the app (stunted with 2T or underweight = high with puskesmas referral; food packages only for growth
+   problems; supplementary food and iron tablets for pregnant women with KEK or anaemia); the second run reached 4 of
+   4. Say that the new high-risk rule still needs the expert panel's confirmation, and that these are workflow tests
+   with synthetic profiles, not a clinical evaluation.
+11. Show me the changes section by section, marking new and changed text, before giving me the full revised chapter.
    Ask me if anything in my thesis conflicts with Part B instead of guessing.
 
 Citations to use or keep: Strauss, J., Witoelar, F., & Sikoki, B. (2016). The Fifth Wave of the Indonesia Family Life
@@ -257,7 +265,7 @@ Kader cannot visit every child.
 | ARI definition | Cough **and** difficult or fast breathing, matching IFLS5 |
 | Results screen | Shows P(stunting). Every yes/no input is named by the child's value (e.g. "Tinggal di desa" instead of "Wilayah perkotaan ▲", "Belum punya jamban sendiri ber-septic tank" instead of "Jamban sendiri dengan septic tank ▲") |
 | Model performance panel | Both settings, the comparisons with ifls5-lr-1 and the rule, and decimal commas in Indonesian |
-| Tests | 435 backend tests, the ML smoke test, and all browser suites pass (48 app steps, 83 features, 37 QA cases) |
+| Tests | 441 backend tests, the ML smoke test, and all browser suites pass (48 app steps, 83 features, 37 QA cases) |
 
 ![Figure 4.15c (new). The model performance panel (officer → Dasbor → Detail teknis).](img/1-model-performance-panel-fig-4-15c.png){height=20cm}
 
